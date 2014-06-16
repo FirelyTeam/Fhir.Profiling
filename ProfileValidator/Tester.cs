@@ -19,6 +19,7 @@ namespace ProfileValidation
         }
 
         protected abstract Profile LoadProfile();
+
         protected abstract IEnumerable<Feed.Entry> Entries();
 
         public void ValidateEntries(Profile profile, IEnumerable<Feed.Entry> entries, ReportMode mode)

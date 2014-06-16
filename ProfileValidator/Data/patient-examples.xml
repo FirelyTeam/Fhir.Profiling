@@ -119,8 +119,9 @@
         <address>
             <use value="home"/>
             <line value="2222 Home Street"/>
-          </address>
+        </address>
 
+        <deceasedBoolean value="true"/>
         <managingOrganization>
           <reference value="Organization/hl7"/>
         </managingOrganization>

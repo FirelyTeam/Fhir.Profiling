@@ -128,8 +128,7 @@ namespace Fhir.Profiling
             get
             {
                 string xpath = this.Element.Path.NodeMatch;
-                // string xpath = string.Format("./f:{0}", this.Element.Name);
-
+               
                 XPathNodeIterator nodes = Node.Select(xpath, NSM);
                 foreach (XPathNavigator node in nodes)
                 {

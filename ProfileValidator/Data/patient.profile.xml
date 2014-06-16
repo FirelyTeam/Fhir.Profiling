@@ -359,7 +359,7 @@ May need to have options for contacting the person urgently and also to help wit
         <short value="Indicates if the individual is deceased or not"/>
         <formal value="Indicates if the individual is deceased or not."/>
         <comments value="If there&#39;s no value in the instance it means there is no statement on whether or not the individual is deceased. Most systems will interpret the absence of a value as a sign of the person being alive."/>
-        <min value="0"/>
+        <min value="1"/>
         <max value="1"/>
         <type>
           <code value="boolean"/>

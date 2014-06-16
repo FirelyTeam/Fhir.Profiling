@@ -17,7 +17,7 @@ namespace Fhir.IO
 {
     public static class FhirFile
     {
-        public static Profile LoadXmlFile(string filename)
+        public static List<Structure> LoadXmlFile(string filename)
         {
             XmlDocument document = new XmlDocument();
             document.Load(filename);
@@ -27,8 +27,8 @@ namespace Fhir.IO
 
         public static void LoadXmlFile(this Profile profile, string filename)
         {
-            Profile p = LoadXmlFile(filename);
-            profile.Add(p);
+            List<Structure> structures = LoadXmlFile(filename);
+            profile.Add(structures);
         }
 
         public static Feed LoadXMLFeed(string filename)

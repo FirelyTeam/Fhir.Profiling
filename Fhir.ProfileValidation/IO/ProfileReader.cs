@@ -123,18 +123,19 @@ namespace Fhir.Profiling
             return structure;
         }
 
-        public Profile ReadProfile(XPathNavigator node)
+        public List<Structure> ReadProfile(XPathNavigator node)
         {
-            Profile profile = new Profile();
+            List<Structure> structures = new List<Structure>();
             XPathNodeIterator xStructures = node.Select("f:Profile/f:structure", ns);
             foreach (XPathNavigator xStructure in xStructures)
             {
-                profile.Add(ReadStructure(xStructure));
+                Structure s = ReadStructure(xStructure);
+                structures.Add(s);
             }
-            return profile;
+            return structures;
         }
 
-        public Profile Read(IXPathNavigable navigable)
+        public List<Structure> Read(IXPathNavigable navigable)
         {
             XPathNavigator navigator = navigable.CreateNavigator();
             ns = Namespace.GetManager(navigator);

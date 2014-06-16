@@ -26,18 +26,18 @@ namespace Fhir.Profiling
             return structure;
         }
 
-        public static Profile PrimitiveProfileFor(IEnumerable<string> list)
+        public static List<Structure> PrimitiveProfileFor(IEnumerable<string> list)
         {
-            Profile profile = new Profile();
+            List<Structure> structures = new List<Structure>();
             foreach (string s in list)
             {
-                profile.Add(Primitive(s));
+                structures.Add(Primitive(s));
             }
 
-            return profile;
+            return structures;
         }
 
-        public static Profile MetaTypesProfile()
+        public static List<Structure> MetaTypesProfile()
         {
             string[] list = { "Structure", "Extension", "Resource", "Narrative" };
             // NB. Narrative bevat <status> en <div>, en <div> mag html bevatten. 
@@ -45,7 +45,7 @@ namespace Fhir.Profiling
             return PrimitiveProfileFor(list);
         }
 
-        public static Profile DataTypesProfile()
+        public static List<Structure> DataTypesProfile()
         {
             string[] list = {
                 "ratio",
@@ -69,7 +69,7 @@ namespace Fhir.Profiling
             return PrimitiveProfileFor(list);
         }
 
-        public static Profile PrimitiveTypesProfile()
+        public static List<Structure> PrimitiveTypesProfile()
         {
             string[] list = { 
                 "instant",

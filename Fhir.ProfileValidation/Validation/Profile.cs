@@ -18,21 +18,20 @@ namespace Fhir.Profiling
     public class Profile
     {
         public List<ValueSet> ValueSets = new List<ValueSet>();
+        
         public List<Structure> Structures = new List<Structure>();
 
-        public void Add(Structure structure)
-        {
-            Structures.Add(structure);
-        }
         public void Add(List<Structure> structures)
         {
             addReferencesTo(structures);
             this.Structures.AddRange(structures);
         }
+        
         public void Add(IEnumerable<ValueSet> valuesets)
         {
             this.ValueSets.AddRange(valuesets);
         }
+        
         public void Add(Profile profile)
         {
             Add(profile.Structures);
@@ -66,6 +65,7 @@ namespace Fhir.Profiling
             }
             return null;
         }
+
         public ValueSet GetValueSetByUri(string uri)
         {
             foreach (ValueSet valueset in ValueSets)
