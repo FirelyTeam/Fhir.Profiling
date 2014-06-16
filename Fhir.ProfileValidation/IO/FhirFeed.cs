@@ -20,10 +20,21 @@ namespace Fhir
         public XPathNavigator navigator { get; private set; }
     }
 
+    
+
     public class Feed
     {
         XPathNavigator navigator;
         XmlNamespaceManager manager;
+
+        public class Entry
+        {
+            public string Title { get; internal set; }
+            public string Id { get; internal set; }
+            public XPathNavigator ResourceNode;
+
+            internal XPathNavigator Node;
+        }
 
         public Feed(IXPathNavigable navigable)
         {
@@ -36,6 +47,20 @@ namespace Fhir
         public XPathNodeIterator Select(string xpath)
         {
             return navigator.Select(xpath, manager);
+        }
+
+        public IEnumerable<Entry> Entries()
+        {
+            XPathNodeIterator iterator = Select("atom:feed/atom:entry");
+            foreach (XPathNavigator node in iterator)
+            {
+                Entry entry = new Entry();
+                entry.Node = node;
+                entry.Title = node.SelectSingleNode("atom:title", manager).Value;
+                entry.Id = node.SelectSingleNode("atom:id", manager).Value;
+                entry.ResourceNode = node.SelectSingleNode("atom:content/*", manager);
+                yield return entry;
+            }
         }
 
         public IEnumerable<XPathNavigator> Resources

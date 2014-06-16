@@ -15,52 +15,37 @@ using System.Text.RegularExpressions;
 using System.IO;
 using Fhir.IO;
 using Fhir.Profiling;
+using Fhir;
 
-namespace ProfileValidator
+namespace ProfileValidation
 {
-    // todo: element type reference OR name reference (recursion)
+    // todo: parse meaning of [x].
+    // todo: name reference (recursion)
     // todo: ValueSet vs. CodeSystem
+    // todo: extensions
     // todo: Element names are profile URI specific (names can overlap with other profiles)
     // todo: Merge Profile class (when possible) with Api.Introspection and Api.ModelInfo
-    // todo: parse meaning of [x].
+    
+    // todo: Slices
+    // todo: Layering (adding the defining resource to the profile, then adding a restricting resource to the same profile)
+    
     class Program
     {
-        static void ValidateFileSet(string resource_name)
+        public static void Run<T>(ReportMode mode) where T:Tester, new()
         {
-            Validation.Profile profile = new Validation.Profile();
-            profile.LoadXMLValueSets("Data\\valuesets.xml");
-            profile.LoadXmlFile("Data\\type-HumanName.profile.xml");
-            profile.LoadXmlFile("Data\\" + resource_name + ".profile.xml");
-            
-            Validator validator = new Validator(profile);
-
-            Fhir.Feed feed = FhirFile.LoadXMLFeed("Data\\" + resource_name + "-examples.xml");
-            
-            Console.Write("\nValidating " + resource_name + " fileset");
-            
-            foreach (XPathNavigator node in feed.Resources)
-            {
-                File.AppendAllText("c:\\temp\\output.txt", "------------------ VALIDATING RESOURCE --------------------\n");
-                validator.Validate(node);
-                validator.Report.Print(@"c:\temp\output.txt", false);
-                Console.Write(".");
-            }
-            Console.WriteLine("done.");
-        }
-
-        static void Validate(params string[] resource_names)
-        {
-            foreach(string resource_name in resource_names)
-            {
-                ValidateFileSet(resource_name);
-            }
+            Tester tester = new T();
+            tester.Run(mode);
         }
 
         static void Main(string[] args)
         {
-            File.Delete("Data\\output.txt");
-            Validate("patient");
-            Console.ReadKey();
+            //Run<PatientTester>(ReportMode.Summary);
+            //Run<ValueSetsTester>();
+            //Run<LipidTester>(ReportMode.Summary); // deze faalt vw. invalide lipid-profile
+            //Run<ProfileTester>(ReportMode.Summary);
+            Run<LipidProfileTester>(ReportMode.Summary);
+
+
         }
     }
 }

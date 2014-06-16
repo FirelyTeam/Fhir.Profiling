@@ -35929,7 +35929,8 @@ The data in the Resource covers the &quot;who&quot; information about the patien
             <definition>
               <short value="A contact detail for the individual"/>
               <formal value="A contact detail (e.g. a telephone number or an email address) by which the individual may be contacted."/>
-              <comments value="Person may have multiple ways to be contacted with different uses or applicable periods. May need to have options for contacting the person urgently and also to help with identification. The address may not go directly to the individual, but may reach another party that is able to proxy for the patient (i.e. home phone, or pet owner&#39;s phone)."/>
+              <comments value="Person may have multiple ways to be contacted with different uses or applicable periods. 
+May need to have options for contacting the person urgently and also to help with identification. The address may not go directly to the individual, but may reach another party that is able to proxy for the patient (i.e. home phone, or pet owner&#39;s phone)."/>
               <min value="0"/>
               <max value="*"/>
               <type>
@@ -36015,11 +36016,13 @@ The data in the Resource covers the &quot;who&quot; information about the patien
               <isModifier value="true"/>
               <mapping>
                 <identity value="rim"/>
-                <map value="player[classCode=PSN|ANM and determinerCode=INSTANCE]/deceasedInd,player[classCode=PSN|ANM and determinerCode=INSTANCE]/deceasedTime"/>
+                <map value="player[classCode=PSN|ANM and determinerCode=INSTANCE]/deceasedInd,
+player[classCode=PSN|ANM and determinerCode=INSTANCE]/deceasedTime"/>
               </mapping>
               <mapping>
                 <identity value="v2"/>
-                <map value="PID-30 (bool) and PID-29 (datetime)"/>
+                <map value="PID-30
+ (bool) and PID-29 (datetime)"/>
               </mapping>
             </definition>
           </element>
@@ -36090,7 +36093,8 @@ The data in the Resource covers the &quot;who&quot; information about the patien
               <isModifier value="false"/>
               <mapping>
                 <identity value="rim"/>
-                <map value="player[classCode=PSN|ANM and determinerCode=INSTANCE]/multipleBirthInd, player[classCode=PSN|ANM and determinerCode=INSTANCE]/multipleBirthOrderNumber"/>
+                <map value="player[classCode=PSN|ANM and determinerCode=INSTANCE]/multipleBirthInd, 
+player[classCode=PSN|ANM and determinerCode=INSTANCE]/multipleBirthOrderNumber"/>
               </mapping>
               <mapping>
                 <identity value="v2"/>
@@ -36228,7 +36232,8 @@ The data in the Resource covers the &quot;who&quot; information about the patien
             <definition>
               <short value="A contact detail for the person"/>
               <formal value="A contact detail for the person, e.g. a telephone number or an email address."/>
-              <comments value="Person may have multiple ways to be contacted with different uses or applicable periods. May need to have options for contacting the person urgently, and also to help with identification."/>
+              <comments value="Person may have multiple ways to be contacted with different uses or applicable periods. 
+May need to have options for contacting the person urgently, and also to help with identification."/>
               <min value="0"/>
               <max value="*"/>
               <type>
@@ -36457,7 +36462,8 @@ The data in the Resource covers the &quot;who&quot; information about the patien
             <definition>
               <short value="Languages which may be used to communicate with the patient about his or her health"/>
               <formal value="Languages which may be used to communicate with the patient about his or her health."/>
-              <comments value="If no language is specified, this *implies* that the default local language is spoken.For animals, language is not a relevant field, and should be absent from the instance."/>
+              <comments value="If no language is specified, this *implies* that the default local language is spoken.
+For animals, language is not a relevant field, and should be absent from the instance."/>
               <min value="0"/>
               <max value="*"/>
               <type>
@@ -36991,7 +36997,8 @@ The data in the Resource covers the &quot;who&quot; information about the patien
             <definition>
               <short value="A contact detail for the practitioner"/>
               <formal value="A contact detail for the practitioner, e.g. a telephone number or an email address."/>
-              <comments value="Person may have multiple ways to be contacted with different uses or applicable periods. May need to have options for contacting the person urgently, and also to help with identification."/>
+              <comments value="Person may have multiple ways to be contacted with different uses or applicable periods. 
+May need to have options for contacting the person urgently, and also to help with identification."/>
               <min value="0"/>
               <max value="*"/>
               <type>
@@ -42328,7 +42335,8 @@ Example RelatedPersons are:
             <definition>
               <short value="A contact detail for the person"/>
               <formal value="A contact detail for the person, e.g. a telephone number or an email address."/>
-              <comments value="Person may have multiple ways to be contacted with different uses or applicable periods. May need to have options for contacting the person urgently, and also to help with identification."/>
+              <comments value="Person may have multiple ways to be contacted with different uses or applicable periods. 
+May need to have options for contacting the person urgently, and also to help with identification."/>
               <min value="0"/>
               <max value="*"/>
               <type>

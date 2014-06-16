@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30324.0
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProfileValidator", "ProfileValidator\ProfileValidator.csproj", "{6F919A61-F277-4FD8-AE99-3559BBAA8407}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fhir.ProfileValidation", "Fhir.ProfileValidation\Fhir.ProfileValidation.csproj", "{34A3B072-5ABC-4F7C-B7E8-0AB67C58CC61}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fhir.Profiling", "Fhir.ProfileValidation\Fhir.Profiling.csproj", "{34A3B072-5ABC-4F7C-B7E8-0AB67C58CC61}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

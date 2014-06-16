@@ -14,13 +14,18 @@ using System.Xml.XPath;
 
 namespace Fhir.Profiling
 {
-    public static class FhirNamespace
+    public static class Namespace
     {
+        public const string Fhir = "f";
+        public const string Atom = "atom";
+        public const string XHtml = "xhtml";
+
         public static XmlNamespaceManager GetManager(XPathNavigator navigator)
         {
             XmlNamespaceManager nsm = new XmlNamespaceManager(navigator.NameTable);
-            nsm.AddNamespace("f", "http://hl7.org/fhir");
-            nsm.AddNamespace("atom", "http://www.w3.org/2005/Atom");
+            nsm.AddNamespace(Namespace.Fhir, "http://hl7.org/fhir");
+            nsm.AddNamespace(Namespace.Atom, "http://www.w3.org/2005/Atom");
+            nsm.AddNamespace(Namespace.XHtml, "http://www.w3.org/1999/xhtml");
             return nsm;
 
         }

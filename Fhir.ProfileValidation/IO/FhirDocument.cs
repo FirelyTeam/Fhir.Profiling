@@ -11,12 +11,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.XPath;
 
 namespace Fhir.IO
 {
     public static class FhirFile
     {
-        public static Validation.Profile LoadXmlFile(string filename)
+        public static Profile LoadXmlFile(string filename)
         {
             XmlDocument document = new XmlDocument();
             document.Load(filename);
@@ -24,9 +25,9 @@ namespace Fhir.IO
             return reader.Read(document);
         }
 
-        public static void LoadXmlFile(this Validation.Profile profile, string filename)
+        public static void LoadXmlFile(this Profile profile, string filename)
         {
-            Validation.Profile p = LoadXmlFile(filename);
+            Profile p = LoadXmlFile(filename);
             profile.Add(p);
         }
 
@@ -37,30 +38,44 @@ namespace Fhir.IO
             return new Feed(document);
         }
 
-        public static Feed LoadXMLResource(string filename)
+        public static Feed.Entry LoadXMLResource(string filename)
         {
+            XmlDocument document = new XmlDocument();
+            document.Load(filename);
+            
+            XPathNavigator navigator;
+            XmlNamespaceManager manager;
+
+            Feed.Entry entry = new Feed.Entry();
+            entry.Title = filename;
+            entry.Id = "unknown";
+
+            navigator = document.CreateNavigator();
+            manager = new XmlNamespaceManager(navigator.NameTable);
+            manager.AddNamespace("f", "http://hl7.org/fhir");
+            entry.ResourceNode = navigator.SelectSingleNode("*");
             /*
             XmlDocument document = new XmlDocument();
             document.Load(filename);
             return new Feed(document);
             */
-            throw new NotImplementedException("Conversion in xml-reader of single resource as 1-element feed not yet implemented");
+            return entry;
         }
 
-        public static Validation.Profile LoadXMLValueSets(string filename)
+        public static Profile LoadXMLValueSets(string filename)
         {
             XmlDocument document = new XmlDocument();
             document.Load(filename);
             ProfileReader reader = new ProfileReader();
-            List<Validation.ValueSet> valuesets = reader.ReadValueSets(document);
-            Validation.Profile profile = new Validation.Profile();
+            List<ValueSet> valuesets = reader.ReadValueSets(document);
+            Profile profile = new Profile();
             profile.Add(valuesets);
             return profile;
         }
 
-        public static void LoadXMLValueSets(this Validation.Profile profile, string filename)
+        public static void LoadXMLValueSets(this Profile profile, string filename)
         {
-            Validation.Profile p = LoadXMLValueSets(filename);
+            Profile p = LoadXMLValueSets(filename);
             profile.Add(p);
         }
 
