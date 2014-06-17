@@ -12,14 +12,15 @@ namespace Fhir.Profiling.IO
 {
     public class JsonXPathNavigator : XPathNavigator
     {
-        private const string FHIR_NS = "http://hl7.org/fhir";
-        private const string XHTML_NS = "http://www.w3.org/1999/xhtml";
+        public const string FHIR_NS = "http://hl7.org/fhir";
+        public const string XHTML_NS = "http://www.w3.org/1999/xhtml";
+        public const string FHIR_PREFIX = "f";
 
         private readonly NameTable _nameTable = new NameTable();
 
         private readonly Stack<NavigatorState> _state = new Stack<NavigatorState>();
 
-        private NavigatorState current { get { return _state.Peek(); } }
+        private NavigatorState position { get { return _state.Peek(); } }
 
 
         public JsonXPathNavigator(JsonReader reader)
@@ -39,6 +40,7 @@ namespace Fhir.Profiling.IO
             _nameTable.Add(FHIR_NS);
             _nameTable.Add(XHTML_NS);
             _nameTable.Add(String.Empty);
+            _nameTable.Add(FHIR_PREFIX);
         }
 
         public JsonXPathNavigator(JsonXPathNavigator source)
@@ -74,7 +76,7 @@ namespace Fhir.Profiling.IO
             var xpn = other as JsonXPathNavigator;
 
             if (xpn != null)
-                return current.SamePos(xpn.current);
+                return position.SamePos(xpn.position);
             else
                 throw new NotSupportedException("The other navigator must also be a JsonXPathNavigator");
         }
@@ -94,17 +96,29 @@ namespace Fhir.Profiling.IO
 
         public override bool MoveToFirstAttribute()
         {
-            throw new NotImplementedException();
+            if (NodeType == XPathNodeType.Root)
+                return false;
+            else
+                throw new NotImplementedException();
         }
 
         public override bool MoveToFirstChild()
         {
-            throw new NotImplementedException();
+            if (NodeType == XPathNodeType.Root)
+            {
+                position.Element = position.Root.Properties().First();
+                return true;
+            }
+            else
+                throw new NotImplementedException();
         }
 
         public override bool MoveToFirstNamespace(XPathNamespaceScope namespaceScope)
         {
-            throw new NotImplementedException();
+            if (NodeType == XPathNodeType.Root)
+                return false;
+            else
+                throw new NotImplementedException();
         }
 
         public override bool MoveToId(string id)
@@ -114,12 +128,18 @@ namespace Fhir.Profiling.IO
 
         public override bool MoveToNext()
         {
-            throw new NotImplementedException();
+            if (NodeType == XPathNodeType.Root)
+                return false;
+            else
+                throw new NotImplementedException();
         }
 
         public override bool MoveToNextAttribute()
         {
-            throw new NotImplementedException();
+            if (NodeType == XPathNodeType.Root)
+                return false;
+            else
+                throw new NotImplementedException();
         }
 
         public override bool MoveToNextNamespace(XPathNamespaceScope namespaceScope)
@@ -129,12 +149,18 @@ namespace Fhir.Profiling.IO
 
         public override bool MoveToParent()
         {
-            throw new NotImplementedException();
+            if (NodeType == XPathNodeType.Root)
+                return false;
+            else
+                throw new NotImplementedException();
         }
 
         public override bool MoveToPrevious()
         {
-            throw new NotImplementedException();
+            if (NodeType == XPathNodeType.Root)
+                return false;
+            else
+                throw new NotImplementedException();
         }
 
 
@@ -147,11 +173,12 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                if (current.OnRoot) return false;
-
+                if (NodeType == XPathNodeType.Element)
+                {
+                    return position.Element.Value == null || position.Element.Value.Type == JTokenType.Null;
+                }
                 else
-                    throw new NotSupportedException();
-
+                    return false;
             }
         }
 
@@ -159,10 +186,8 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                if (NodeType == XPathNodeType.Root)
-                    return nt(String.Empty);
-                else
-                    throw new NotImplementedException();
+                var pref = Prefix != String.Empty ? Prefix + ":" : String.Empty;
+                return _nameTable.Add(pref + LocalName);
             }
         }
 
@@ -172,6 +197,8 @@ namespace Fhir.Profiling.IO
             {
                 if (NodeType == XPathNodeType.Root)
                     return nt(String.Empty);
+                else if (NodeType == XPathNodeType.Element)
+                    return _nameTable.Add(position.Element.Name);
                 else
                     throw new NotImplementedException();
             }
@@ -184,27 +211,27 @@ namespace Fhir.Profiling.IO
 
         public override string NamespaceURI
         {
-            get { return nt(String.Empty); }
+            get { return nt(FHIR_NS); }
         }
 
         public override string Prefix
         {
-            get { return nt(String.Empty); }
+            get { return nt(FHIR_PREFIX); }
         }
 
         public override XPathNodeType NodeType
         {
             get
             {
-                if (current.OnRoot)
+                if (position.OnRoot)
                     return XPathNodeType.Root;
-                else if (current.OnElement)
+                else if (position.OnElement)
                     return XPathNodeType.Element;
-                else if (current.OnTextNode)
+                else if (position.OnTextNode)
                     return XPathNodeType.Text;
                 else
                 {
-                    throw new NotSupportedException("Internal logic error. Underlying source is at " + current.ToString());
+                    throw new NotSupportedException("Internal logic error. Can't figure out NodeType. Underlying source is at " + position.ToString());
                 }
             }
         }
@@ -224,23 +251,20 @@ namespace Fhir.Profiling.IO
             public NavigatorState(JObject root)
             {
                 Root = root;
-                ElementPos = -1;
-                ArrayPos = -1;
-                AttributePos = -1;
             }
 
             public JObject Root { get; set; }
-            public JObject Current { get; set; }
-            public int? ElementPos { get; set; }
+            public JProperty Element { get; set; }
+            public int? ChildPos { get; set; }
             public int? ArrayPos { get; set; }
             public int? AttributePos { get; set; }
             public bool OnTextNode { get; set;}
 
-            public bool OnRoot { get { return Root != null && Current == null;  } }
+            public bool OnRoot { get { return Root != null && Element == null;  } }
 
             public bool OnElement
             {
-                get { return Current != null && !OnAttribute && !OnTextNode; }                
+                get { return Element != null && !OnAttribute && !OnTextNode; }                
             }
 
             public bool OnAttribute
@@ -255,8 +279,8 @@ namespace Fhir.Profiling.IO
             {
                 var result = new NavigatorState(this.Root);
 
-                result.Current = Current;
-                result.ElementPos = ElementPos;
+                result.Element = Element;
+                result.ChildPos = ChildPos;
                 result.ArrayPos = ArrayPos;
                 result.AttributePos = AttributePos;
                 result.OnTextNode = OnTextNode;
@@ -271,8 +295,8 @@ namespace Fhir.Profiling.IO
             public bool SamePos(NavigatorState other)
             {
                 return Root == other.Root &&
-                       Current == other.Current &&
-                       ElementPos == other.ElementPos &&
+                       Element == other.Element &&
+                       ChildPos == other.ChildPos &&
                        ArrayPos == other.ArrayPos &&
                        AttributePos == other.AttributePos &&
                        OnTextNode == other.OnTextNode;
@@ -283,8 +307,8 @@ namespace Fhir.Profiling.IO
                 var result = new StringBuilder();
                 if (Root == null) result.Append("[Uninitialized]");
                 if (Root != null) result.Append("[Root]");
-                if (Current != null) result.AppendFormat("[Current: {0}]",Current.Path);
-                if (ElementPos != null) result.AppendFormat("[ElementIx: {0}]", ElementPos.Value);
+                if (Element != null) result.AppendFormat("[Element: {0}]",Element.Path);
+                if (ChildPos != null) result.AppendFormat("[ElementIx: {0}]", ChildPos.Value);
                 if (ArrayPos != null) result.AppendFormat("[ArrayIx: {0}]", ArrayPos.Value);
                 if (AttributePos != null) result.AppendFormat("[AttributeIx: {0}]", AttributePos.Value);
                 if (OnTextNode) result.Append("[OnTextNode]");
