@@ -33,16 +33,62 @@ namespace Fhir.Profiling.Tests
             Assert.IsTrue(nav.MoveToFirstChild());
             Assert.AreEqual(XPathNodeType.Element, nav.NodeType);
             Assert.IsFalse(nav.IsEmptyElement);
-            Assert.AreEqual("f:prop1", nav.Name);
-            Assert.AreEqual("prop1", nav.LocalName);
+            Assert.AreEqual("f:test", nav.Name);
+            Assert.AreEqual("test", nav.LocalName);
             Assert.AreEqual(JsonXPathNavigator.FHIR_NS , nav.NamespaceURI);
             Assert.AreEqual(JsonXPathNavigator.FHIR_PREFIX, nav.Prefix);
         }
 
+        [TestMethod]
+        public void TestMoveToChild()
+        {
+            var nav = buildNav();
+            Assert.IsTrue(nav.MoveToFirstChild());
+            Assert.IsTrue(nav.MoveToFirstChild());
+            
+            Assert.AreEqual(XPathNodeType.Element, nav.NodeType);
+            Assert.IsFalse(nav.IsEmptyElement);
+            Assert.AreEqual("f:nodeA", nav.Name);
+
+            Assert.IsTrue(nav.MoveToFirstChild());
+            Assert.AreEqual(XPathNodeType.Text, nav.NodeType);
+            Assert.AreEqual("5", nav.Value);
+
+            Assert.IsFalse(nav.MoveToNext());       // text node does not have siblings
+            Assert.AreEqual(XPathNodeType.Text, nav.NodeType);  // should not have moved
+            Assert.AreEqual("5", nav.Value);
+
+            Assert.IsTrue(nav.MoveToParent());      // move up to nodeA
+            Assert.AreEqual(XPathNodeType.Element, nav.NodeType);
+            Assert.AreEqual("f:nodeA", nav.Name);
+
+            Assert.IsTrue(nav.MoveToNext());        // move to first element of nodeB
+            Assert.AreEqual(XPathNodeType.Element, nav.NodeType);
+            Assert.AreEqual("f:nodeB", nav.Name);
+
+            Assert.IsTrue(nav.MoveToNext());        // move to second element of nodeB
+            Assert.AreEqual(XPathNodeType.Element, nav.NodeType);
+            Assert.AreEqual("f:nodeB", nav.Name);
+            Assert.IsTrue(nav.MoveToFirstChild());
+            Assert.AreEqual(XPathNodeType.Text, nav.NodeType);
+            Assert.AreEqual("hoi", nav.Value);
+            Assert.IsTrue(nav.MoveToParent());
+
+            Assert.IsTrue(nav.MoveToNext());        // move to third element of nodeB
+            Assert.AreEqual(XPathNodeType.Element, nav.NodeType);
+            Assert.AreEqual("f:nodeB", nav.Name);
+            Assert.IsTrue(nav.MoveToFirstChild());
+            Assert.IsTrue(nav.IsEmptyElement);
+            Assert.IsTrue(nav.MoveToParent());
+
+            Assert.IsTrue(nav.MoveToNext());        // move to nodeC
+            Assert.AreEqual(XPathNodeType.Element, nav.NodeType);
+            Assert.AreEqual("f:nodeC", nav.Name);
+
+        }
         private static JsonXPathNavigator buildNav()
         {
-         //   JsonReader r = new JsonTextReader(new StringReader(@"{ prop1: 5, prop2: 'text'}"));
-            JsonReader r = new JsonTextReader(new StringReader(@"{ prop1: 5, prop2: 'text'}"));
+            JsonReader r = new JsonTextReader(new StringReader(@"{ test : { nodeA: 5, nodeB: [4,'hoi',null], nodeC: 'text'} }"));
             var nav = new JsonXPathNavigator(r);
             return nav;
         }
