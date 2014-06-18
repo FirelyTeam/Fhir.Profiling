@@ -53,7 +53,7 @@ namespace Fhir.Profiling.IO
         {
             _state.Clear();
 
-            foreach (var state in other)
+            foreach (var state in other.Reverse())
             {
                 _state.Push(state.Copy());
             }
@@ -178,6 +178,12 @@ namespace Fhir.Profiling.IO
                     _state.Push(currentState);
                     return false;
                 }
+            }
+            else if (NodeType == XPathNodeType.Root)
+            {
+                // we cannot, roll back to old state
+                _state.Push(currentState);
+                return false;
             }
             else
                 throw new InvalidOperationException(

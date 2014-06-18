@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Xml;
 using System.Xml.XPath;
 using Fhir.Profiling.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -86,6 +87,61 @@ namespace Fhir.Profiling.Tests
             Assert.AreEqual("f:nodeC", nav.Name);
 
         }
+
+
+        [TestMethod]
+        public void ParentChild()
+        {
+            var nav = buildNav();
+            Assert.IsTrue(nav.MoveToFirstChild());
+            Assert.IsTrue(nav.MoveToFirstChild());
+            Assert.IsTrue(nav.MoveToFirstChild());
+            Assert.IsTrue(nav.MoveToParent());
+            Assert.IsTrue(nav.MoveToParent());
+            Assert.IsTrue(nav.MoveToParent());
+
+            Assert.IsFalse(nav.MoveToParent());  // one time too many
+        }
+
+        [TestMethod]
+        public void ForwardBackwards()
+        {
+            var nav = buildNav();
+            Assert.IsTrue(nav.MoveToFirstChild());
+            Assert.IsTrue(nav.MoveToFirstChild());      // nodeA
+            Assert.IsTrue(nav.MoveToNext());    // nodeB[0]
+            Assert.IsTrue(nav.MoveToNext());    // nodeB[1]
+            Assert.IsTrue(nav.MoveToPrevious());
+            Assert.IsTrue(nav.MoveToPrevious());
+
+            Assert.IsFalse(nav.MoveToPrevious());  // one time too many
+        }
+
+
+        [TestMethod]
+        public void CloneIsAtSamePosition()
+        {
+            var nav = buildNav();
+            Assert.IsTrue(nav.MoveToFirstChild());
+            Assert.IsTrue(nav.MoveToFirstChild()); // nodeA
+            Assert.IsTrue(nav.MoveToNext()); // nodeB[0]
+            Assert.IsTrue(nav.MoveToNext()); // nodeB[1]
+
+            var nav2 = new JsonXPathNavigator(nav);
+            Assert.IsTrue(nav.IsSamePosition(nav2));
+        }
+
+
+        [TestMethod]
+        public void TestSelect()
+        {
+            var nav = buildNav();
+            var mgr = new XmlNamespaceManager(nav.NameTable);
+            mgr.AddNamespace("f", JsonXPathNavigator.FHIR_NS);
+            var result = nav.Select("/f:test/f:nodeB", mgr);
+            Assert.AreEqual(3, result.Count);
+        }
+
         private static JsonXPathNavigator buildNav()
         {
             JsonReader r = new JsonTextReader(new StringReader(@"{ test : { nodeA: 5, nodeB: [4,'hoi',null], nodeC: 'text'} }"));
