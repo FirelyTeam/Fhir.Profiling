@@ -133,13 +133,25 @@ namespace Fhir.Profiling.Tests
 
 
         [TestMethod]
+        public void RecursiveText()
+        {
+            var nav = buildNav();
+
+            Assert.AreEqual("54hoitext", nav.Value);
+        }
+
+        [TestMethod]
         public void TestSelect()
         {
             var nav = buildNav();
             var mgr = new XmlNamespaceManager(nav.NameTable);
             mgr.AddNamespace("f", JsonXPathNavigator.FHIR_NS);
+            
             var result = nav.Select("/f:test/f:nodeB", mgr);
             Assert.AreEqual(3, result.Count);
+
+            var text = nav.SelectSingleNode("/f:test/f:nodeA/parent::node()/f:nodeB[2]/text()", mgr);
+            Assert.AreEqual("hoi", text.Value);
         }
 
         private static JsonXPathNavigator buildNav()

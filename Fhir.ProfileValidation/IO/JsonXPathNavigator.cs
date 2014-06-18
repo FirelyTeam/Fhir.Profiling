@@ -95,32 +95,11 @@ namespace Fhir.Profiling.IO
 
 
         public override bool MoveToFirstChild()
-        {
-            //if (NodeType == XPathNodeType.Root)
-            //{
-            //    position.Element = position.Children.First();
-            //    return true;
-            //}
-            
+        {          
             if (NodeType == XPathNodeType.Element || NodeType == XPathNodeType.Root)
             {
                 position.ChildPos = 0;
                 return moveToChild(0);
-
-                //if (position.Element.Value is JObject)
-                //{
-                //    position.ChildPos = 0;
-                //    return moveToChild(0);
-                //}
-                //else if (position.Element.Value is JValue)
-                //{
-                //    position.OnTextNode = true;
-                //    return true;
-                //}
-                //else
-                //{
-                //    throw new NotImplementedException();
-                //}
             }
             else
                 return false;
@@ -254,18 +233,6 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                //if (NodeType == XPathNodeType.Element)
-                //{
-                //    if(position.Element.Value == null) return true;
-                //    if(position.Element.Value.Type == JTokenType.Null) return true;
-                //    if (position.Element.Value is JObject && !position.Element.Value.Any()) return true;
-                //    if (position.Element.Value is JArray && !position.Element.Value.Any()) return true;
-
-                //    return false;
-                //}
-                //else
-                //    return false;
-
                 return !position.Children.Any() || position.Children.Single().Value.Type == JTokenType.Null;
             }
         }
@@ -286,7 +253,11 @@ namespace Fhir.Profiling.IO
                 if (NodeType == XPathNodeType.Root)
                     return nt(String.Empty);
                 else if (NodeType == XPathNodeType.Element)
+                {
+                    //var name = position.Element.Name;
+                    //if (name.StartsWith("_")) name = name.Substring(1);
                     return _nameTable.Add(position.Element.Name);
+                }
                 else
                     throw new NotImplementedException();
             }
@@ -329,16 +300,7 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                if (position.OnTextNode)
-                {
-                    // This means position.Element is a JProperty pointing to a primitive
-                    return position.Element.Value.ToString();
-                }
-                else
-                {
-                    // TODO: Navigate over all child elements and append Value
-                    throw new NotImplementedException();
-                }
+                return position.Text;
             }   
         }
 
@@ -367,13 +329,7 @@ namespace Fhir.Profiling.IO
 
             public IEnumerable<JProperty> Children
             {
-                get
-                {
-                    if (_children == null)
-                        _children = NavigatorState.GetChildren(Element);
-                    return _children;
-                }
-
+                get { return _children ?? (_children = getChildren(Element)); }
             }
 
             public bool OnRoot
@@ -383,7 +339,7 @@ namespace Fhir.Profiling.IO
 
             public bool OnElement
             {
-                get { return !OnRoot && !OnAttribute && !OnTextNode; }                
+                get { return !OnRoot && !OnAttribute && !OnTextNode; }
             }
 
             public bool OnTextNode
@@ -396,7 +352,24 @@ namespace Fhir.Profiling.IO
                 get { return AttributePos != null; }
             }
 
-            public static IEnumerable<JProperty> GetChildren(JProperty parent)
+            public string Text
+            {
+                get
+                {
+                    if (OnTextNode)
+                    {
+                        // This means position.Element is a JProperty pointing to a primitive
+                        return Element.Value.ToString();
+                    }
+                    else
+                    {
+                        return String.Join("", Children.Select(c => new NavigatorState(c).Text));
+                    }
+                }
+            }
+        
+
+            private static IEnumerable<JProperty> getChildren(JProperty parent)
             {
                 if (parent.Value == null) yield break;
 
@@ -409,16 +382,16 @@ namespace Fhir.Profiling.IO
                     var props = ((JObject) parent.Value).Properties();
                     foreach (var prop in props)
                     {
+                        var name = prop.Name;
+
                         // If the property is an Array, return it as sibling properties
                         if (prop.Value is JArray)
                         {
                             foreach (var elem in prop.Value.Children())
                             {
-                                yield return new JProperty(prop.Name, elem);
+                                yield return new JProperty(name, elem);
                             }
                         }
-                        else
-                            yield return prop;
                     }
                 }                
 
