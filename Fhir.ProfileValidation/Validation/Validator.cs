@@ -98,16 +98,20 @@ namespace Fhir.Profiling
             }
         }
 
+        public void ValidateForMissingStructures(Vector vector)
+        {
+            IEnumerable<string> missing = vector.Element.TypeRefs.Where(t => t.Structure == null).Select(t => t.Code);
+            foreach (string s in missing)
+            {
+                report.Add("Structure", Kind.Skipped, vector, "Profile misses structure [{0}]. Evaluation is skipped.", s);
+            }
+        }
+        
         public void ValidateStructures(Vector vector)
         {
             foreach(Vector v in vector.ElementStructures)
             {
                 ValidateStructure(v);
-            }
-            IEnumerable<string> missing =  vector.Element.TypeRefs.Where(t => t.Structure == null).Select(t => t.Code);
-            foreach(string s in missing)
-            {
-                report.Add("Structure", Kind.Unknown, vector, "Profile has no structure to evaluate [{0}].", s);
             }
 
         }
@@ -158,6 +162,7 @@ namespace Fhir.Profiling
             }
             ValidateConstraints(vector);
             ValidateStructures(vector);
+            ValidateForMissingStructures(vector);
             ValidateNodeChildren(vector);
             ValidateElementChildren(vector);
             ValidateSlices(vector);
@@ -166,9 +171,13 @@ namespace Fhir.Profiling
      
         public void ValidateStructure(Vector vector)
         {
-            if (vector.Structure.IsPrimitive)
+            if (vector.Structure == null)
             {
-                report.Add("Primitive", Kind.Info, null, "Primitive [{0}] is not evaluated", vector.Structure.Name);
+                report.Add("Structure", Kind.Unknown, vector, "Node [{0}] does not match a known structure. Further evaluation is impossible.", vector.Node.Name);
+            }
+            else if (vector.Structure.IsPrimitive)
+            {
+                report.Add("Primitive", Kind.Info, vector, "Primitive [{0}] is not evaluated", vector.Structure.Name);
             }
             else
             {

@@ -19,8 +19,10 @@ using Fhir;
 
 namespace ProfileValidation
 {
-    // todo: parse meaning of [x].
+    // done: parse meaning of [x].
+
     // todo: name reference (recursion)
+    // merge declaring profile with restricting profile (declaring profile is not a standard yet)
     // todo: ValueSet vs. CodeSystem
     // todo: extensions
     // todo: Element names are profile URI specific (names can overlap with other profiles)
@@ -39,7 +41,7 @@ namespace ProfileValidation
 
         static void Main(string[] args)
         {
-            Run<PatientTester>(ReportMode.Full);
+            Run<PatientTester>(ReportMode.Summary);
             //Run<ValueSetsTester>();
             //Run<LipidTester>(ReportMode.Summary); // deze faalt vw. invalide lipid-profile
             //Run<ProfileTester>(ReportMode.Summary);

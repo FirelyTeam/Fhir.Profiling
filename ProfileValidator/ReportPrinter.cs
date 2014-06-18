@@ -68,7 +68,7 @@ namespace Fhir.Profiling
                 case Kind.Invalid:
                 case Kind.Incomplete:
                 case Kind.Unknown:
-                case Kind.Skip:
+                case Kind.Skipped:
                     tag = "b";
                     break;
 
@@ -88,7 +88,7 @@ namespace Fhir.Profiling
                 switch (outcome.Kind)
                 {
                     case Kind.Start:
-                        WriteLine(i + string.Format("<u>{0}</u> {1} ({2})", outcome.Type, outcome.Vector.Node.Name, outcome.Vector.Element.Name));
+                        WriteLine(i + string.Format("<u>{0}</u> {1} ({2})", outcome.Type, outcome.Vector.Element.Name, outcome.Vector.Node.Name));
                         WriteLine(i + "{{");
                         break;
                     case Kind.End:

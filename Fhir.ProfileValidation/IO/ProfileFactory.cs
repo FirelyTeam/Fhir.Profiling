@@ -17,10 +17,10 @@ namespace Fhir.Profiling
             return structure;
         }
 
-        public static Structure DivStructure()
+        public static Structure XhtmlStructure()
         {
             Structure structure = new Structure();
-            structure.Name = "div";
+            structure.Name = "xhtml";
             structure.IsPrimitive = true;
             structure.Namespace = Namespace.XHtml;
             return structure;
@@ -88,6 +88,13 @@ namespace Fhir.Profiling
                 "uuid" };
 
             return PrimitiveProfileFor(list);
+        }
+
+        public static List<Structure> ExceptionsProfile()
+        {
+            List<Structure> list = new List<Structure>();
+            list.Add(XhtmlStructure());
+            return list;
         }
     }
 }

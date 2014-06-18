@@ -11,6 +11,7 @@
         <contact>
           <name value="Buggy" />
         </contact>
+        <deceasedBoolean value="true"/>
       </Patient>
     </content>
   </entry>
@@ -194,7 +195,7 @@
       <name>Grahame Grieve</name>
     </author>
     <content type="text/xml">
-      <Patient xmlns="http://hl7.org/fhir">
+      <Patientcorrupt xmlns="http://hl7.org/fhir">
         <text>
           <status value="generated"/>
           <div xmlns="http://www.w3.org/1999/xhtml">Nuclear, Nancy. SSN:
@@ -231,7 +232,7 @@
           <reference value="Organization/hl7"/>
         </managingOrganization>
         <active value="true"/>
-      </Patient>
+      </Patientcorrupt>
     </content>
     <summary type="xhtml">
       <div xmlns="http://www.w3.org/1999/xhtml">Nuclear, Nancy. SSN:
