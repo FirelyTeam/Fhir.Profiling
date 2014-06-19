@@ -69,11 +69,21 @@ namespace Fhir.Profiling
             outcome.Nesting = this.nesting;
             Outcomes.Add(outcome);
         }
-        public void Add(string type, Kind kind, Vector? vector, string message, params object[] args)
+        public void Add(string type, Kind kind, Vector vector, string message, params object[] args)
         {
             Outcome outcome;
             outcome.Type = type;
-            outcome.Vector = vector ?? Vector.Void();
+            outcome.Vector = vector;
+            outcome.Message = string.Format(message, args);
+            outcome.Kind = kind;
+            outcome.Nesting = this.nesting;
+            Outcomes.Add(outcome);
+        }
+        public void Add(string type, Kind kind, string message, params object[] args)
+        {
+            Outcome outcome;
+            outcome.Type = type;
+            outcome.Vector = Vector.Void();
             outcome.Message = string.Format(message, args);
             outcome.Kind = kind;
             outcome.Nesting = this.nesting;

@@ -35,7 +35,7 @@ namespace Fhir.Profiling
             bool valid = this.constraintValidator.Validate(constraint, out message);
             if (!valid)
             {
-                report.Add("Profile Constraint", Kind.Invalid, null, message);
+                report.Add("Profile Constraint", Kind.Invalid,  message);
             }
             
         }
@@ -58,7 +58,7 @@ namespace Fhir.Profiling
             }
             else if (typeref.Code == null)
             {
-                report.Add("Profile", Kind.Invalid, null, "Missing a reference to a structure in element [{0}]", element.Name);
+                report.Add("Profile", Kind.Invalid, "Missing a reference to a structure in element [{0}]", element.Name);
             }
             else if (Regex.IsMatch(typeref.Code, "[A-Za-z][A-Za-z0-9]*"))
             {
@@ -66,7 +66,7 @@ namespace Fhir.Profiling
             }
             else
             {
-                report.Add("Profile", Kind.Invalid, null, string.Format("Invalid structure reference '{0}' in {1}", typeref.Code, string.Join(".", element.Path)));
+                report.Add("Profile", Kind.Invalid, "Invalid structure reference '{0}' in {1}", typeref.Code, element.Path);
             }
         }
 
@@ -106,7 +106,7 @@ namespace Fhir.Profiling
         private void AddStructureNamesToReport()
         {
             foreach (string s in structureNames.Distinct())
-                report.Add("Profile", Kind.Incomplete, null, "Missing structure definition [{0}]", s);
+                report.Add("Profile", Kind.Incomplete, "Missing structure definition [{0}]", s);
             
         }
 
