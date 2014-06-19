@@ -16,6 +16,13 @@ namespace Fhir.Profiling
     {
         public string Name;
         public Path Path { get; set; }
+        public Segment Segment
+        {
+            get
+            {
+                return Path.Last;
+            }
+        }
         public List<TypeRef> TypeRefs = new List<TypeRef>();
         public bool HasTypeRef
         {
@@ -25,6 +32,38 @@ namespace Fhir.Profiling
             }
         }
         public List<Element> Children = new List<Element>();
+        public bool Multi
+        {
+            get 
+            {
+                return Path.Segments.Last().Multi;
+            }
+        }
+        public bool IsRoot
+        {
+            get
+            {
+                return Path.Count == 1;
+            }
+        }
+        public string NodeMatch
+        {
+            get
+            {
+                string xpath;
+
+                if (Segment.Multi)
+                {
+                    xpath = string.Format("./*[starts-with(name(),'{0}')]", Segment.Name);
+                }
+                else
+                {
+                    xpath = string.Format("./{0}:{1}", this.Namespace, Segment.Name);
+                }
+                return xpath;
+            }
+        }
+
         public bool HasChild(string name)
         {
             return this.Children.FirstOrDefault(c => c.Name == name) != null;

@@ -33,6 +33,13 @@ namespace Fhir.Profiling
     {
         public List<Segment> Segments { get; private set; }
 
+        public Segment Last
+        {
+            get
+            {
+                return Segments.Last();
+            }
+        }
         public Path(string path)
         {
             Segments = new List<Segment>();
@@ -63,24 +70,6 @@ namespace Fhir.Profiling
             get
             {
                 return Segments.Last().Name;
-            }
-        }
-
-        public string NodeMatch
-        {
-            get
-            {
-                string xpath;
-
-                if (Segments.Last().Multi)
-                {
-                    xpath = string.Format("./*[starts-with(name(),'{0}')]", ElementName);
-                }
-                else
-                {
-                    xpath = string.Format("./f:{0}", ElementName);
-                }
-                return xpath;
             }
         }
 

@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Fhir.Profiling
 {
-    public enum Kind { Valid, Invalid, Incomplete, Unknown, Info, Start, End, Skip, Any }
+    public enum Kind { Valid, Invalid, Incomplete, Unknown, Info, Start, End, Skipped, Any }
 
     public static class KindExtensions
     {

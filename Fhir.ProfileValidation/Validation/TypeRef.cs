@@ -17,5 +17,11 @@ namespace Fhir.Profiling
         public string Code;
         public string ProfileName { get; set; }
         public Structure Structure { get; set; }
+        public override string ToString()
+        {
+            string s = Code;
+            if (Structure == null) s += "(unknown)";
+            return s;
+        }
     }
 }

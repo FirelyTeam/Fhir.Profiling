@@ -90,7 +90,7 @@ namespace Fhir.Profiling
 
         public int Count()
         {
-            string xpath = string.Format("./{0}:{1}", Element.Namespace, Element.Name); //"./f:" + element.Name;
+            string xpath = Element.NodeMatch;
             XPathNodeIterator iterator = Node.Select(xpath, NSM);
             return iterator.Count;
         }
@@ -127,10 +127,9 @@ namespace Fhir.Profiling
         {
             get
             {
-                string xpath = this.Element.Path.NodeMatch;
-               
-                XPathNodeIterator nodes = Node.Select(xpath, NSM);
-                foreach (XPathNavigator node in nodes)
+                string xpath = this.Element.NodeMatch;
+
+                foreach (XPathNavigator node in Node.Select(xpath, NSM))
                 {
                     yield return this.MoveTo(node);
                 }
@@ -148,16 +147,34 @@ namespace Fhir.Profiling
             }
         }
         
+        public string ExtractTypeFromNode()
+        {
+            if (Node.Name.StartsWith(Element.Name))
+            {
+                return Node.Name.Remove(0, Element.Name.Length);
+            }
+            else throw new Exception("Data Type cannot be extracted from node on multivalued element");
+        }
+        
+        public bool Match(TypeRef typeref)
+        {
+            if (Element.Multi)
+            {
+                string code = ExtractTypeFromNode();
+                return (typeref.Code.ToLower() == code.ToLower());
+            }
+            else return true;
+        }
+
         public IEnumerable<Vector> ElementStructures
         {
             get
             {
-                foreach (TypeRef t in Element.TypeRefs)
+                foreach (TypeRef typeref in Element.TypeRefs)
                 {
-                    if (t.Structure != null)
+                    if (typeref.Structure != null && Match(typeref))
                     {
-                        yield return this.MoveTo(t.Structure);
-
+                        yield return this.MoveTo(typeref.Structure);
                     }
                 }
             }
@@ -166,6 +183,11 @@ namespace Fhir.Profiling
         public bool ElementHasChild(string name)
         {
             return Element.Children.FirstOrDefault(c => c.Name == name) != null;
+        }
+
+        public override string ToString()
+        {
+            return string.Format("{0} × {1}", Element.ToString(), Node.Name);
         }
     }
 
