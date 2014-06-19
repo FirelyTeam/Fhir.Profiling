@@ -12,9 +12,10 @@ namespace Fhir.Profiling.IO
 {
     public class JsonXPathNavigator : XPathNavigator
     {
-        public const string FHIR_NS = "http://hl7.org/fhir";
         public const string XHTML_NS = "http://www.w3.org/1999/xhtml";
+        public const string FHIR_NS = "http://hl7.org/fhir";
         public const string FHIR_PREFIX = "f";
+        public const string SPEC_CHILD_ID = "id";
 
         private readonly NameTable _nameTable = new NameTable();
 
@@ -98,8 +99,7 @@ namespace Fhir.Profiling.IO
         {          
             if (NodeType == XPathNodeType.Element || NodeType == XPathNodeType.Root)
             {
-                position.ChildPos = 0;
-                return moveToChild(0);
+                return moveToElementChild(0);
             }
             else
                 return false;
@@ -140,15 +140,15 @@ namespace Fhir.Profiling.IO
             // Keep the current state, when we cannot move after we've moved up to the parent, we'll need to stay
             // where we are
             var currentState = _state.Pop();
-
+            
             // Can we move?
             if (NodeType == XPathNodeType.Element)
             {
                 var newPos = position.ChildPos.Value + delta;
-                if (canMoveTo(newPos))
+                if (canMoveToElementChild(newPos))
                 {
                     position.ChildPos = newPos;
-                    moveToChild(newPos);
+                    moveToElementChild(newPos);
                     return true;
                 }
                 else
@@ -169,16 +169,37 @@ namespace Fhir.Profiling.IO
                     "Internal logic error: popping state on tryMove does not end up on element");
         }
 
-        private bool canMoveTo(int index)
+
+
+        private IEnumerable<JProperty> currentElementChildren()
         {
-            var count = position.Children.Count();
+            return position.Children.Where(c => !isAttribute(c));
+        }
+
+
+        private IEnumerable<JProperty> currentAttributeChildren()
+        {
+            return position.Children.Where(c => isAttribute(c));
+        }
+
+
+        private bool isAttribute(JProperty property)
+        {
+            return property.Name == NavigatorState.SPEC_NODE_VALUE || property.Name == SPEC_CHILD_ID;
+        }
+
+        private bool canMoveToElementChild(int index)
+        {
+            var count = currentElementChildren().Count();
             return index >= 0 && index < count;
         }
 
-        private bool moveToChild(int index)
+        private bool moveToElementChild(int index)
         {
             var child = position.Children.Skip(index).FirstOrDefault();
             if (child == null) return false;
+
+            position.ChildPos = index;
 
             var newState = new NavigatorState(child);
             _state.Push(newState);
@@ -284,9 +305,9 @@ namespace Fhir.Profiling.IO
             {
                 if (position.OnRoot)
                     return XPathNodeType.Root;
-                else if (position.OnElement)
+                else if (position.OnElement && !position.OnValueElement)
                     return XPathNodeType.Element;
-                else if (position.OnTextNode)
+                else if (position.OnValueElement)
                     return XPathNodeType.Text;
                 else
                 {
@@ -306,8 +327,8 @@ namespace Fhir.Profiling.IO
 
         private class NavigatorState
         {
-            private const string SPEC_NODE_ROOT = "(root)";
-            private const string SPEC_NODE_TEXT = "(text)";
+            public const string SPEC_NODE_ROOT = "(root)";
+            public const string SPEC_NODE_VALUE = "(value)";
 
             public NavigatorState(JObject root)
             {
@@ -339,12 +360,12 @@ namespace Fhir.Profiling.IO
 
             public bool OnElement
             {
-                get { return !OnRoot && !OnAttribute && !OnTextNode; }
+                get { return !OnRoot && !OnAttribute; }
             }
 
-            public bool OnTextNode
+            public bool OnValueElement
             {
-                get { return Element.Name == SPEC_NODE_TEXT; }
+                get { return Element.Name == SPEC_NODE_VALUE; }
             }
 
             public bool OnAttribute
@@ -356,7 +377,7 @@ namespace Fhir.Profiling.IO
             {
                 get
                 {
-                    if (OnTextNode)
+                    if (OnValueElement)
                     {
                         // This means position.Element is a JProperty pointing to a primitive
                         return Element.Value.ToString();
@@ -371,33 +392,36 @@ namespace Fhir.Profiling.IO
 
             private static IEnumerable<JProperty> getChildren(JProperty parent)
             {
-                if (parent.Value == null) yield break;
+                var parentObject = parent.Value as JObject;
 
-                // Simulate anonymous "text node" within the parent
-                if (parent.Value is JValue)
-                    yield return new JProperty(SPEC_NODE_TEXT, parent.Value);
+                if (parentObject == null)
+                    throw new ArgumentException("Can only get children for a JObject parent", "parent");
 
-                else if (parent.Value is JObject)
+                //if (parent.Name == SPEC_NODE_VALUE)
+                //    throw new ArgumentException("Cannot get children for pseudo-primitive (value) node", "parent");
+
+                foreach (var prop in parentObject.Properties())
                 {
-                    var props = ((JObject) parent.Value).Properties();
-                    foreach (var prop in props)
-                    {
-                        var name = prop.Name;
+                    var name = prop.Name;
 
-                        // If the property is an Array, return it as sibling properties
-                        if (prop.Value is JArray)
+                    // If the property is an Array, return it as sibling properties
+                    if (prop.Value is JArray)
+                    {
+                        foreach (var elem in prop.Value.Children())
                         {
-                            foreach (var elem in prop.Value.Children())
-                            {
-                                yield return new JProperty(name, elem);
-                            }
+                            yield return new JProperty(name, elem);
                         }
                     }
-                }                
 
-                else
-                    throw new InvalidOperationException(
-                        "Internal logic error. Was not expecting to find children for a " + parent.Value.GetType().Name);
+                    // If the property is a primitive, transform it to an object with a (value) member
+                    else if (prop.Value is JValue)
+                    {
+                        yield return new JProperty(name, new JObject(new JProperty(SPEC_NODE_VALUE, prop.Value)));
+                    }
+
+                    else
+                        yield return prop;
+                }
             }
 
 
@@ -428,7 +452,7 @@ namespace Fhir.Profiling.IO
                 if (ChildPos != null) result.AppendFormat("[ElementIx: {0}]", ChildPos.Value);
                 if (ArrayPos != null) result.AppendFormat("[ArrayIx: {0}]", ArrayPos.Value);
                 if (AttributePos != null) result.AppendFormat("[AttributeIx: {0}]", AttributePos.Value);
-                if (OnTextNode) result.Append("[OnTextNode]");
+                if (OnValueElement) result.Append("[OnValueElement]");
                 return result.ToString();
             }
         }
