@@ -35,22 +35,7 @@ namespace Fhir.Profiling.IO
             //else
                 return new JProperty(ROOT_PROP_NAME, root);
         }
-
-        public static string PrimitiveValue(this JProperty token)
-        {
-            if (token.Value is JObject)
-            {
-                var obj = (JObject)token.Value;
-                var prim = obj.Properties().Single();
-                if (prim.IsPrimitive())
-                {
-                    return ((JValue)prim.Value).ToString();
-                }
-            }
-
-            throw new ArgumentException("Property is not a JObject representing a primmitive value", "token");
-        }
-
+     
         public static string ElementText(this JProperty token)
         {
             if (token.Value is JObject)
@@ -73,12 +58,32 @@ namespace Fhir.Profiling.IO
 
         public static bool IsRoot(this JProperty prop)
         {
-            return prop.Value is JValue && prop.Name == ROOT_PROP_NAME;
+            return prop.Value is JObject && prop.Name == ROOT_PROP_NAME;
         }
 
         public static bool IsPrimitive(this JProperty prop)
         {
             return prop.Value is JValue && prop.Name == PRIMITIVE_PROP_NAME;
+        }
+
+        public static bool IsNullPrimitive(this JProperty prop)
+        {
+            return prop.Name == PRIMITIVE_PROP_NAME && prop.Value.Type == JTokenType.Null;
+        }
+
+        public static JValue PrimitivePropertyValue(this JProperty token)
+        {
+            if (token.Value is JObject)
+            {
+                var obj = (JObject)token.Value;
+                var prim = obj.Properties().Single(p => p.Name == PRIMITIVE_PROP_NAME);
+                if (prim.IsPrimitive())
+                {
+                    return (JValue)prim.Value;
+                }
+            }
+
+            throw new ArgumentException("Property is not a JObject representing a primitive value", "token");
         }
 
         public static IEnumerable<JProperty> ElementChildren(this JProperty prop)

@@ -19,15 +19,9 @@ namespace Fhir.Profiling.IO
 {
     internal class NavigatorState
     {
-        public NavigatorState(JProperty root)
-        {
-            Element = root;
-        }
-
-        public NavigatorState(JProperty pos, string parentPath)
+        public NavigatorState(JProperty pos)
         {
             Element = pos;
-            ParentPath = parentPath;
         }
 
         private NavigatorState()
@@ -35,9 +29,8 @@ namespace Fhir.Profiling.IO
         }
 
         public JProperty Element { get; private set; }
-        public int? ChildPos { get; private set; }
-        public int? AttributePos { get; private set; }
-        public string ParentPath { get; private set; }
+        public int? ChildPos { get; set; }
+        public int? AttributePos { get; set; }
 
         // Transient variable containing cached list of children,
         // so we safe time recompiling these when navigating back and forth
@@ -52,32 +45,14 @@ namespace Fhir.Profiling.IO
             }
         }
 
-        public bool IsSameState(NavigatorState other)
-        {
-            return ChildPos == other.ChildPos &&
-                    AttributePos == other.AttributePos &&
-                    Path == other.Path;  // Can't compare Element, it's a reference
-        }
-
         public NavigatorState Copy()
         {
             var result = new NavigatorState();
             result.Element = Element;
             result.ChildPos = ChildPos;
             result.AttributePos = AttributePos;
-            result.ParentPath = ParentPath;
 
             return result;
-        }
-
-        public string Name
-        {
-            get { return Element.Name; }
-        }
-
-        public string Path
-        {
-            get { return ParentPath + "/" + Name; }
         }
 
         public override string ToString()

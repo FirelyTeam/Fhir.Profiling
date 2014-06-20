@@ -66,7 +66,7 @@ namespace Fhir.Profiling.IO
 
         private IEnumerable<JProperty> attributeChildren()
         {
-            return position.Children.Where(c => isAttribute(c));
+            return position.Children.Where(c => isAttribute(c) && !c.IsNullPrimitive());
         }
 
         private bool isAttribute(JProperty property)
@@ -97,12 +97,13 @@ namespace Fhir.Profiling.IO
      
         public override bool IsSamePosition(XPathNavigator other)
         {
-            var xpn = other as JsonXPathNavigator;
+            throw new NotImplementedException();
+            //var xpn = other as JsonXPathNavigator;
 
-            if (xpn != null)
-                return position.IsSameState(xpn.position);
-            else
-                throw new NotSupportedException("The other navigator must also be a JsonXPathNavigator");
+            //if (xpn != null)
+            //    return position.IsSameState(xpn.position);
+            //else
+            //    throw new NotSupportedException("The other navigator must also be a JsonXPathNavigator");
         }
 
         public override bool MoveTo(XPathNavigator other)
@@ -130,29 +131,36 @@ namespace Fhir.Profiling.IO
 
         public override bool MoveToNext()
         {
-            if (NodeType == XPathNodeType.Root)
+            if (NodeType == XPathNodeType.Element)
+                return tryMoveToSibling(1);
+            else
                 return false;
-
-            return tryMoveToSibling(1);
         }
 
         public override bool MoveToPrevious()
         {
-            if (NodeType == XPathNodeType.Root)
+            if (NodeType == XPathNodeType.Element)
+                return tryMoveToSibling(-1);
+            else
                 return false;
-
-            return tryMoveToSibling(-1);
         }
 
         public override bool MoveToParent()
         {
             if (NodeType == XPathNodeType.Root)
                 return false;
-            else
+            else if (NodeType == XPathNodeType.Element)
             {
                 _state.Pop();
                 return true;
             }
+            else if (NodeType == XPathNodeType.Attribute)
+            {
+                position.AttributePos = null;
+                return true;
+            }
+            else
+                return false;
         }
 
         private bool tryMoveToSibling(int delta)
@@ -202,15 +210,12 @@ namespace Fhir.Profiling.IO
             var child = elementChildren().Skip(index).FirstOrDefault();
             if (child == null) return false;
 
-            throw new NotImplementedException();
+            position.ChildPos = index;
 
-            //TODO: need position.NewChildNavigator(index);
-            //position.ChildPos = index;
+            var newState = new NavigatorState(child);
+            _state.Push(newState);
 
-            //var newState = new NavigatorState(child);
-            //_state.Push(newState);
-
-            //return true;
+            return true;
         }
 
         private bool canMoveToAttributeChild(int index)
@@ -221,16 +226,26 @@ namespace Fhir.Profiling.IO
 
         private bool moveToAttributeChild(int index)
         {
-            throw new NotImplementedException();
+            var child = attributeChildren().Skip(index).FirstOrDefault();
+            if (child == null) return false;
 
-            //var child = attributeChildren().Skip(index).FirstOrDefault();
-            //if (child == null) return false;
+            position.AttributePos = index;
 
-            //position.AttributePos = index;
-
-            //return true;
+            return true;
         }
 
+        private JProperty currentAttribute
+        {
+            get
+            {
+                if (position.AttributePos != null)
+                {
+                    attributeChildren().Skip(position.AttributePos.Value);
+                }
+
+                return null;
+            }
+        }
 
         public override bool MoveToFirstNamespace(XPathNamespaceScope namespaceScope)
         {
@@ -247,18 +262,18 @@ namespace Fhir.Profiling.IO
 
         public override bool MoveToFirstAttribute()
         {
-            if (NodeType == XPathNodeType.Root)
-                return false;
+            if (NodeType == XPathNodeType.Element)
+                return moveToAttributeChild(0);
             else
-                throw new NotImplementedException();
+                return false;
         }
 
         public override bool MoveToNextAttribute()
         {
-            if (NodeType == XPathNodeType.Root)
-                return false;
+            if (NodeType == XPathNodeType.Attribute)
+                return moveToAttributeChild(position.AttributePos.Value + 1);
             else
-                throw new NotImplementedException();
+                return false;
         }
 
         public override bool MoveToNextNamespace(XPathNamespaceScope namespaceScope)
@@ -295,11 +310,9 @@ namespace Fhir.Profiling.IO
                 if (NodeType == XPathNodeType.Root)
                     return nt(String.Empty);
                 else if (NodeType == XPathNodeType.Element)
-                {
-                    //var name = position.Element.Name;
-                    //if (name.StartsWith("_")) name = name.Substring(1);
                     return _nameTable.Add(position.Element.Name);
-                }
+                else if (NodeType == XPathNodeType.Attribute)
+                    return _nameTable.Add(currentAttribute.Name);
                 else
                     throw new NotImplementedException();
             }
@@ -312,51 +325,29 @@ namespace Fhir.Profiling.IO
 
         public override string NamespaceURI
         {
-            get { return (NodeType == XPathNodeType.Root) ? nt(String.Empty) : nt(FHIR_NS); }
+            get { return (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Attribute) ? nt(String.Empty) : nt(FHIR_NS); }
         }
 
         public override string Prefix
         {
-            get { return (NodeType == XPathNodeType.Root) ? nt(String.Empty) : nt(FHIR_PREFIX); }
+            get { return (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Attribute) ? nt(String.Empty) : nt(FHIR_PREFIX); }
         }
-
-
-        //public bool OnValueElement
-        //{
-        //    get { return Element.IsPrimitive(); }
-        //}
-
-        //public bool OnNormalElement
-        //{
-        //    get { return !OnRootElement && !OnAttribute && !OnValueElement; }
-        //}
-
-        //public bool OnNullValueElement
-        //{
-        //    get { return OnValueElement && Element.Value.Type == JTokenType.Null; }
-        //}
-
-        //public bool OnAttribute
-        //{
-        //    get { return AttributePos != null; }
-        //}
-
 
         public override XPathNodeType NodeType
         {
             get
             {
-                throw new NotImplementedException();
-                //if (position.OnRootElement)
-                //    return XPathNodeType.Root;
-                //else if (position.OnNormalElement)
-                //    return XPathNodeType.Element;
-                //else if (position.OnValueElement)
-                //    return XPathNodeType.Text;
-                //else
-                //{
-                //    throw new NotSupportedException("Internal logic error. Can't figure out NodeType. Underlying source is at " + position.ToString());
-                //}
+                if (position.Element.IsRoot())
+                    return XPathNodeType.Root;
+                else if (position.AttributePos == null)
+                    return XPathNodeType.Element;
+                else if (position.AttributePos != null)
+                    return XPathNodeType.Attribute;
+                else
+                {
+                    throw new NotSupportedException("Internal logic error. Can't figure out NodeType. Underlying source is at " + position.ToString());
+                }
+                //TODO: Simulate Binary.content as NoteType.Text
             }
         }
 
@@ -365,7 +356,32 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                return position.Element.ElementText();
+                if (NodeType == XPathNodeType.Attribute)
+                {
+                    JValue primitive;
+                    if (currentAttribute.IsPrimitive())
+                        primitive = (JValue)currentAttribute.Value;
+                    else
+                    {
+                        // This is a named attribute (like id and contentType) for which only the
+                        // primitive value is relevant, they cannot be extended
+                        primitive = currentAttribute.PrimitivePropertyValue();
+                    }
+
+                    // We accept four primitive json types, convert them to the correct xml string representations
+                    if (primitive.Type == JTokenType.Integer)
+                        return XmlConvert.ToString((Int64)primitive.Value);
+                    else if (primitive.Type == JTokenType.Float)
+                        return XmlConvert.ToString((Decimal)primitive.Value);
+                    else if (primitive.Type == JTokenType.Boolean)
+                        return XmlConvert.ToString((bool)primitive.Value);
+                    else if (primitive.Type == JTokenType.String)
+                        return (string)primitive.Value;
+                    else
+                        throw new FormatException("Only integer, float, boolean and string primitives are allowed in FHIR Json");
+                }
+                else
+                    return position.Element.ElementText();
             }   
         }
 
