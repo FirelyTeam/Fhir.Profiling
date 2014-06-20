@@ -35,7 +35,14 @@ namespace Fhir.Profiling
         public string Message;
         public int Nesting;
         public Kind Kind;
-        
+        public Outcome(string type, Kind kind, Vector vector, string message, int nesting = 0)
+        {
+            this.Type = type;
+            this.Kind = kind;
+            this.Vector = vector;
+            this.Message = message;
+            this.Nesting = nesting;
+        }
         public override string ToString()
         {
             return string.Format("{0} {1}: {2}", this.Type,  Kind.ToString().ToLower(), this.Message);
@@ -50,23 +57,19 @@ namespace Fhir.Profiling
 
         public void Start(string type, Vector vector)
         {
-            Add(Kind.Start, type, vector);
+            Add(type, Kind.Start, vector);
             nesting++;
         }
         public void End()
         {
             nesting--;
-            Add(Kind.End, null, Vector.Void());
+            Add(null, Kind.End, Vector.Void());
         }
 
-        private void Add(Kind kind, string type, Vector vector)
+        private void Add(string type, Kind kind, Vector vector)
         {
-            Outcome outcome = new Outcome();
-            outcome.Kind = kind;
-            outcome.Type = type;
-            outcome.Vector = vector;
-            outcome.Message = null;
-            outcome.Nesting = this.nesting;
+            Outcome outcome = new Outcome(type, kind, vector, null, this.nesting);
+            
             Outcomes.Add(outcome);
         }
         public void Add(string type, Kind kind, Vector vector, string message, params object[] args)

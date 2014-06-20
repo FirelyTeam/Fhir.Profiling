@@ -49,6 +49,7 @@ namespace Fhir.Profiling
             return string.Format("{0} ({1} elements)", Name, Elements.Count);
         }
         public Boolean IsPrimitive { get; set; }
+        public string ValuePattern { get; set; }
         public string Namespace { get; set; }
     }
 }

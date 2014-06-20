@@ -1794,7 +1794,7 @@ A FHIR RESTful server serving the profile resource is also a profile repository.
         <formal value="Definition of the extension and its content."/>
         <min value="1"/>
         <max value="1"/>
-        <nameReference value="Profile.structure.element.definition"/>
+        <nameReference value="Profile.structure.element.definition.blabla"/>
         <isModifier value="false"/>
       </definition>
     </element>

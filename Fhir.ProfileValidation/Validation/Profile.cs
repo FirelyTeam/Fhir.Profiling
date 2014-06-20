@@ -23,8 +23,8 @@ namespace Fhir.Profiling
 
         public void Add(List<Structure> structures)
         {
-            addReferencesTo(structures);
             this.Structures.AddRange(structures);
+            AddInternalReferences();
         }
         
         public void Add(IEnumerable<ValueSet> valuesets)
@@ -38,20 +38,41 @@ namespace Fhir.Profiling
             Add(profile.ValueSets);
         }
 
-        private void addReferencesTo(List<Structure> structures)
+        public IEnumerable<Element> Elements
         {
-            foreach (Structure s in structures)
+            get 
             {
-                foreach (Element e in s.Elements)
+                return Structures.SelectMany(s => s.Elements);
+            }
+        }
+
+       
+        public IEnumerable<TypeRef> NewTypeRefs
+        {
+            get 
+            {
+                return Elements.SelectMany(e => e.TypeRefs).Where(r => r.Structure == null);
+            }
+        }
+
+        private void AddInternalReferences()
+        {
+            foreach(Element element in Elements)
+            {
+                if (element.BindingUri != null)
+                    element.Binding = this.GetValueSetByUri(element.BindingUri);
+            }
+
+            foreach (TypeRef typeref in NewTypeRefs)
+            {
+                typeref.Structure = this.GetStructureByName(typeref.Code);
+            }
+
+            foreach (Structure structure in Structures)
+            {
+                foreach (Element element in Elements)
                 {
-                    foreach (TypeRef r in e.TypeRefs)
-                    {
-                        r.Structure = this.GetStructureByName(r.Code);
-                    }
-                    if (e.ReferenceUri != null)
-                    {
-                        e.Reference = this.GetValueSetByUri(e.ReferenceUri);
-                    }
+                    element.ElementRef = this.GetElementByName(structure, element.ElementRefPath);
                 }
             }
         }
@@ -72,6 +93,18 @@ namespace Fhir.Profiling
             {
                 if (valueset.System == uri)
                     return valueset;
+            }
+            return null;
+        }
+       
+        public Element GetElementByName(Structure structure, string path)
+        {
+            foreach(Element element in structure.Elements)
+            {
+                if (element.Path.ToString() == path)
+                {
+                    return element;
+                }
             }
             return null;
         }

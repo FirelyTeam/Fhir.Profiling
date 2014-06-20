@@ -84,6 +84,19 @@ namespace Fhir.Profiling
             ValidateTypeRefs(element);
         }
 
+        public void ValidateElementRefs(Structure structure)
+        {
+            foreach(Element element in structure.Elements)
+            {
+                if (element.ElementRefPath != null && element.ElementRef == null)
+                {
+                    report.Add("Element", Kind.Invalid, 
+                        "Element [{0}] Name reference to different element [{1}] is unresolved", 
+                        element.Path, element.ElementRefPath);
+                }
+            }
+        }
+
         public void ValidateStructure(Structure structure)
         {
             if (structure.IsPrimitive)
@@ -93,6 +106,8 @@ namespace Fhir.Profiling
             {
                 ValidateElement(element);
             }
+
+            ValidateElementRefs(structure);
         }
 
         private void ValidateStructures()

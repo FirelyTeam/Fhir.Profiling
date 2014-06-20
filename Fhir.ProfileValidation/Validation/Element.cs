@@ -31,6 +31,8 @@ namespace Fhir.Profiling
                 return TypeRefs.Count > 0;
             }
         }
+        public string ElementRefPath { get; set; }
+        public Element ElementRef { get; set; }
         public List<Element> Children = new List<Element>();
         public bool Multi
         {
@@ -77,8 +79,8 @@ namespace Fhir.Profiling
         }
         public Cardinality Cardinality;
         public List<Constraint> Constraints = new List<Constraint>();
-        public string ReferenceUri;
-        public ValueSet Reference;
+        public string BindingUri;
+        public ValueSet Binding;
         public string Namespace { get; set; } // namespace key (f=fhir, xhtml, etc.)
         public override string ToString()
         {

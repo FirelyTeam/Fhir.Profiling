@@ -27,7 +27,7 @@ namespace ProfileValidation
     // todo: extensions
     // todo: Element names are profile URI specific (names can overlap with other profiles)
     // todo: Merge Profile class (when possible) with Api.Introspection and Api.ModelInfo
-    
+    // todo: When an element type is a ResourceReference, then the path does not contain [x]. The restriction is content of the refered resource.
     // todo: Slices
     // todo: Layering (adding the defining resource to the profile, then adding a restricting resource to the same profile)
     
@@ -41,10 +41,10 @@ namespace ProfileValidation
 
         static void Main(string[] args)
         {
-            Run<PatientTester>(ReportMode.Summary);
+            //Run<PatientTester>(ReportMode.Full);
             //Run<ValueSetsTester>();
             //Run<LipidTester>(ReportMode.Summary); // deze faalt vw. invalide lipid-profile
-            //Run<ProfileTester>(ReportMode.Summary);
+            Run<ProfileTester>(ReportMode.Full);
             //Run<LipidProfileTester>(ReportMode.Summary);
 
 

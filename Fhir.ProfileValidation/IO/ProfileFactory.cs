@@ -9,11 +9,34 @@ namespace Fhir.Profiling
 {
     public static class ProfileFactory
     {
-        public static Structure Primitive(string name)
+       
+        static ProfileFactory()
+        {
+        }
+
+        public static void AddExtensionElement(Structure structure)
+        {
+            string path = string.Format("{0}.extension", structure.Root.Name); 
+            Element element = new Element();
+            element.Path = new Path(path);
+            element.Name = "extension";
+            element.TypeRefs.Add(new TypeRef { Code = "Extension" });
+            structure.Elements.Add(element);
+        }
+
+        public static Structure Primitive(string name, string pattern)
         {
             Structure structure = new Structure();
             structure.Name = name;
+
+            Element element = new Element();
+            element.Path = new Path(name);
+            element.Name = name;
+            structure.Elements.Add(element);
+
+            AddExtensionElement(structure);
             structure.IsPrimitive = true;
+            structure.ValuePattern = pattern;
             return structure;
         }
 
@@ -31,7 +54,7 @@ namespace Fhir.Profiling
             List<Structure> structures = new List<Structure>();
             foreach (string s in list)
             {
-                structures.Add(Primitive(s));
+                structures.Add(Primitive(s, ""));
             }
 
             return structures;
@@ -71,23 +94,25 @@ namespace Fhir.Profiling
 
         public static List<Structure> PrimitiveTypesProfile()
         {
-            string[] list = { 
-                "instant",
-                "date",
-                "dateTime",
-                "decimal",
-                "element",
-                "boolean",
-                "integer",
-                "string",
-                "uri",
-                "base64Binary",
-                "code",
-                "id",
-                "oid",
-                "uuid" };
+            List<Structure> list = new List<Structure>
+            { 
+                Primitive("instant", @".*"),
+                Primitive("date", @".*"),
+                Primitive("dateTime", @".*"),
+                Primitive("decimal", @"\d+"),
+                //Primitive("element", ".*"),
+                Primitive("boolean", @"(true|false)"),
+                Primitive("integer", @"\d+"),
+                Primitive("string", @".*"),
+                Primitive("uri", @"http"),
+                Primitive("base64Binary", @".*"),
+                Primitive("code", @".*"),
+                Primitive("id", @"\d+"),
+                Primitive("oid", @".*"),
+                Primitive("uuid" , @".*")
+            };
 
-            return PrimitiveProfileFor(list);
+            return list;
         }
 
         public static List<Structure> ExceptionsProfile()

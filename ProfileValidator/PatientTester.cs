@@ -21,6 +21,7 @@ namespace ProfileValidation
             profile.Add(ProfileFactory.PrimitiveTypesProfile());
             profile.Add(ProfileFactory.ExceptionsProfile());
             profile.LoadXMLValueSets("Data\\valuesets.xml");
+            profile.LoadXmlFile("Data\\type-Extension.profile.xml");
             profile.LoadXmlFile("Data\\type-HumanName.profile.xml");
             profile.LoadXmlFile("Data\\type-Identifier.profile.xml");
             profile.LoadXmlFile("Data\\type-Narrative.profile.xml");

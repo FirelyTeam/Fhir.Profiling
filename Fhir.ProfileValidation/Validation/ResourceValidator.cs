@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
+using System.Text.RegularExpressions;
 
 namespace Fhir.Profiling
 {
@@ -33,19 +34,9 @@ namespace Fhir.Profiling
             this.Profile = profile;
         }
 
-        public ValueSet FindValueSet(string uri)
-        {
-            foreach(ValueSet valueset in Profile.ValueSets)
-            {
-                if (valueset.System == uri)
-                    return valueset;
-            }
-            return null;
-        }
-
         public bool ValidateCoding(string name, string code)
         {
-            ValueSet valueset = FindValueSet(name);
+            ValueSet valueset = Profile.GetValueSetByUri(name);
             if (valueset != null)
             {
                 return valueset.Contains(code);
@@ -56,11 +47,11 @@ namespace Fhir.Profiling
         public void ValidateCode(Vector vector)
         {
             string value = vector.GetValue("@value");
-            bool exists = vector.Element.Reference.Contains(value);
+            bool exists = vector.Element.Binding.Contains(value);
             Kind kind = exists? Kind.Valid : Kind.Invalid;
             report.Add("Coding", kind, vector, 
                 "Code [{0}] ({1}) contains a nonexisting value [{2}]", 
-                vector.Element.Name, vector.Element.Reference.System, value);
+                vector.Element.Name, vector.Element.Binding.System, value);
         }
 
         public void ValidateCardinality(Vector vector)
@@ -113,7 +104,6 @@ namespace Fhir.Profiling
             {
                 ValidateStructure(v);
             }
-
         }
 
         public void ValidateElementChildren(Vector vector)
@@ -126,6 +116,16 @@ namespace Fhir.Profiling
                 {
                     ValidateElement(u);
                 }
+            }
+        }
+
+        public void ValidateElementRef(Vector vector)
+        {
+            if (vector.Element.ElementRef != null)
+            {
+                Vector clone = vector.Clone();
+                clone.Element = vector.Element.ElementRef;
+                ValidateElement(clone);
             }
         }
 
@@ -149,24 +149,49 @@ namespace Fhir.Profiling
 
         public void ValidateSlices(Vector vector)
         {
-            //this should give as compiler error
+            // 
         }
 
         public void ValidateElement(Vector vector)
         {
             report.Start("element", vector);
-            if (vector.Element.Reference != null) // if element is a code element, treat it differently.
+            if (vector.Element.Binding != null) // if element is a code element, treat it differently.
             {
                 ValidateCode(vector);
                 return;
             }
             ValidateConstraints(vector);
             ValidateStructures(vector);
+            ValidatePrimitive(vector);
             ValidateForMissingStructures(vector);
             ValidateNodeChildren(vector);
             ValidateElementChildren(vector);
+            ValidateElementRef(vector);
             ValidateSlices(vector);
             report.End();
+        }
+
+        public void ValidatePrimitive(Vector vector)
+        {
+            if (!vector.Structure.IsPrimitive) return;
+
+            try
+            {
+                string value = vector.GetValue("./@value");
+                string pattern = vector.Structure.ValuePattern;
+                if (Regex.IsMatch(value, pattern))
+                {
+                    report.Add("Primitive", Kind.Valid, vector, "The value format ({0}) of primitive [{1}] is valid.", vector.Element.Name, vector.Node.Name);
+                }
+                else
+                {
+                    report.Add("Primitive", Kind.Invalid, vector, "The value format ({0}) of primitive [{1}] not valid.", vector.Element.Name, vector.Node.Name);
+                }
+            }
+            catch
+            {
+                report.Add("Primitive", Kind.Invalid, vector, "The value of primitive [{0}] was not present.", vector.Node.Name);
+            }
         }
      
         public void ValidateStructure(Vector vector)
@@ -174,10 +199,6 @@ namespace Fhir.Profiling
             if (vector.Structure == null)
             {
                 report.Add("Structure", Kind.Unknown, vector, "Node [{0}] does not match a known structure. Further evaluation is impossible.", vector.Node.Name);
-            }
-            else if (vector.Structure.IsPrimitive)
-            {
-                report.Add("Primitive", Kind.Info, vector, "Primitive [{0}] is not evaluated", vector.Structure.Name);
             }
             else
             {

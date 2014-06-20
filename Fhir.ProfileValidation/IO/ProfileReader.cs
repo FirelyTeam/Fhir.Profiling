@@ -54,7 +54,7 @@ namespace Fhir.Profiling
 
         public void ReadReference(Element element, XPathNavigator node)
         {
-            element.ReferenceUri = OptionalValue(node, "f:definition/f:binding/f:referenceResource/f:reference/@value");
+            element.BindingUri = OptionalValue(node, "f:definition/f:binding/f:referenceResource/f:reference/@value");
         }
 
         public TypeRef ReadTypeRef(Element element, XPathNavigator node)
@@ -73,6 +73,11 @@ namespace Fhir.Profiling
                 TypeRef typeref = ReadTypeRef(element, n);
                 element.TypeRefs.Add(typeref);
             }
+        }
+
+        public void ReadElementRef(Element element, XPathNavigator node)
+        {
+            element.ElementRefPath = OptionalValue(node, "f:definition/f:nameReference/@value");
         }
 
         private int constraintnr;
@@ -102,6 +107,7 @@ namespace Fhir.Profiling
             ReadPath(element, node);
             ReadReference(element, node);
             ReadTypeRefs(element, node);
+            ReadElementRef(element, node);
             ReadCardinality(element, node);
             ReadConstraints(element, node);
             ReadSlices(element, node);
