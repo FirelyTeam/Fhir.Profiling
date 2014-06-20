@@ -1,4 +1,11 @@
-﻿using System;
+﻿/*
+* Copyright (c) 2014, Furore (info@furore.com) and contributors
+* See the file CONTRIBUTORS for details.
+*
+* This file is licensed under the BSD 3-Clause license
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -30,7 +37,8 @@ namespace Fhir.Profiling.IO
 
             try
             {
-                _state.Push(new NavigatorState(JObject.Load(reader)));
+                var root = (JObject)JObject.Load(reader);
+                _state.Push(new NavigatorState(root.AsElementRoot()));
             }
             catch (Exception e)
             {
@@ -49,6 +57,23 @@ namespace Fhir.Profiling.IO
 
             _nameTable = source._nameTable;
         }
+
+
+        private IEnumerable<JProperty> elementChildren()
+        {
+            return position.Children.Where(c => !isAttribute(c));
+        }
+
+        private IEnumerable<JProperty> attributeChildren()
+        {
+            return position.Children.Where(c => isAttribute(c) && !c.IsNullPrimitive());
+        }
+
+        private bool isAttribute(JProperty property)
+        {
+            return property.IsPrimitive() || property.Name == SPEC_CHILD_ID;
+        }
+
 
         private void copyState(IEnumerable<NavigatorState> other)
         {
@@ -69,16 +94,16 @@ namespace Fhir.Profiling.IO
         {
             return new JsonXPathNavigator(this);
         }
-
      
         public override bool IsSamePosition(XPathNavigator other)
         {
-            var xpn = other as JsonXPathNavigator;
+            throw new NotImplementedException();
+            //var xpn = other as JsonXPathNavigator;
 
-            if (xpn != null)
-                return position.SamePos(xpn.position);
-            else
-                throw new NotSupportedException("The other navigator must also be a JsonXPathNavigator");
+            //if (xpn != null)
+            //    return position.IsSameState(xpn.position);
+            //else
+            //    throw new NotSupportedException("The other navigator must also be a JsonXPathNavigator");
         }
 
         public override bool MoveTo(XPathNavigator other)
@@ -94,7 +119,6 @@ namespace Fhir.Profiling.IO
                 return false;
         }
 
-
         public override bool MoveToFirstChild()
         {          
             if (NodeType == XPathNodeType.Element || NodeType == XPathNodeType.Root)
@@ -107,29 +131,36 @@ namespace Fhir.Profiling.IO
 
         public override bool MoveToNext()
         {
-            if (NodeType == XPathNodeType.Root)
+            if (NodeType == XPathNodeType.Element)
+                return tryMoveToSibling(1);
+            else
                 return false;
-
-            return tryMoveToSibling(1);
         }
 
         public override bool MoveToPrevious()
         {
-            if (NodeType == XPathNodeType.Root)
+            if (NodeType == XPathNodeType.Element)
+                return tryMoveToSibling(-1);
+            else
                 return false;
-
-            return tryMoveToSibling(-1);
         }
 
         public override bool MoveToParent()
         {
             if (NodeType == XPathNodeType.Root)
                 return false;
-            else
+            else if (NodeType == XPathNodeType.Element)
             {
                 _state.Pop();
                 return true;
             }
+            else if (NodeType == XPathNodeType.Attribute)
+            {
+                position.AttributePos = null;
+                return true;
+            }
+            else
+                return false;
         }
 
         private bool tryMoveToSibling(int delta)
@@ -147,7 +178,6 @@ namespace Fhir.Profiling.IO
                 var newPos = position.ChildPos.Value + delta;
                 if (canMoveToElementChild(newPos))
                 {
-                    position.ChildPos = newPos;
                     moveToElementChild(newPos);
                     return true;
                 }
@@ -169,34 +199,15 @@ namespace Fhir.Profiling.IO
                     "Internal logic error: popping state on tryMove does not end up on element");
         }
 
-
-
-        private IEnumerable<JProperty> currentElementChildren()
-        {
-            return position.Children.Where(c => !isAttribute(c));
-        }
-
-
-        private IEnumerable<JProperty> currentAttributeChildren()
-        {
-            return position.Children.Where(c => isAttribute(c));
-        }
-
-
-        private bool isAttribute(JProperty property)
-        {
-            return property.Name == NavigatorState.SPEC_NODE_VALUE || property.Name == SPEC_CHILD_ID;
-        }
-
         private bool canMoveToElementChild(int index)
         {
-            var count = currentElementChildren().Count();
+            var count = elementChildren().Count();
             return index >= 0 && index < count;
         }
 
         private bool moveToElementChild(int index)
         {
-            var child = position.Children.Skip(index).FirstOrDefault();
+            var child = elementChildren().Skip(index).FirstOrDefault();
             if (child == null) return false;
 
             position.ChildPos = index;
@@ -207,6 +218,34 @@ namespace Fhir.Profiling.IO
             return true;
         }
 
+        private bool canMoveToAttributeChild(int index)
+        {
+            var count = attributeChildren().Count();
+            return index >= 0 && index < count;
+        }
+
+        private bool moveToAttributeChild(int index)
+        {
+            var child = attributeChildren().Skip(index).FirstOrDefault();
+            if (child == null) return false;
+
+            position.AttributePos = index;
+
+            return true;
+        }
+
+        private JProperty currentAttribute
+        {
+            get
+            {
+                if (position.AttributePos != null)
+                {
+                    attributeChildren().Skip(position.AttributePos.Value);
+                }
+
+                return null;
+            }
+        }
 
         public override bool MoveToFirstNamespace(XPathNamespaceScope namespaceScope)
         {
@@ -221,29 +260,26 @@ namespace Fhir.Profiling.IO
             throw new NotImplementedException();
         }
 
-
         public override bool MoveToFirstAttribute()
         {
-            if (NodeType == XPathNodeType.Root)
-                return false;
+            if (NodeType == XPathNodeType.Element)
+                return moveToAttributeChild(0);
             else
-                throw new NotImplementedException();
+                return false;
         }
 
         public override bool MoveToNextAttribute()
         {
-            if (NodeType == XPathNodeType.Root)
-                return false;
+            if (NodeType == XPathNodeType.Attribute)
+                return moveToAttributeChild(position.AttributePos.Value + 1);
             else
-                throw new NotImplementedException();
+                return false;
         }
 
         public override bool MoveToNextNamespace(XPathNamespaceScope namespaceScope)
         {
             throw new NotImplementedException();
         }
-
-
 
         private string nt(string val)
         {
@@ -254,7 +290,7 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                return !position.Children.Any() || position.Children.Single().Value.Type == JTokenType.Null;
+                return !position.Children.Any();
             }
         }
 
@@ -274,11 +310,9 @@ namespace Fhir.Profiling.IO
                 if (NodeType == XPathNodeType.Root)
                     return nt(String.Empty);
                 else if (NodeType == XPathNodeType.Element)
-                {
-                    //var name = position.Element.Name;
-                    //if (name.StartsWith("_")) name = name.Substring(1);
                     return _nameTable.Add(position.Element.Name);
-                }
+                else if (NodeType == XPathNodeType.Attribute)
+                    return _nameTable.Add(currentAttribute.Name);
                 else
                     throw new NotImplementedException();
             }
@@ -291,28 +325,29 @@ namespace Fhir.Profiling.IO
 
         public override string NamespaceURI
         {
-            get { return (NodeType == XPathNodeType.Root) ? nt(String.Empty) : nt(FHIR_NS); }
+            get { return (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Attribute) ? nt(String.Empty) : nt(FHIR_NS); }
         }
 
         public override string Prefix
         {
-            get { return (NodeType == XPathNodeType.Root) ? nt(String.Empty) : nt(FHIR_PREFIX); }
+            get { return (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Attribute) ? nt(String.Empty) : nt(FHIR_PREFIX); }
         }
 
         public override XPathNodeType NodeType
         {
             get
             {
-                if (position.OnRoot)
+                if (position.Element.IsRoot())
                     return XPathNodeType.Root;
-                else if (position.OnElement && !position.OnValueElement)
+                else if (position.AttributePos == null)
                     return XPathNodeType.Element;
-                else if (position.OnValueElement)
-                    return XPathNodeType.Text;
+                else if (position.AttributePos != null)
+                    return XPathNodeType.Attribute;
                 else
                 {
                     throw new NotSupportedException("Internal logic error. Can't figure out NodeType. Underlying source is at " + position.ToString());
                 }
+                //TODO: Simulate Binary.content as NoteType.Text
             }
         }
 
@@ -321,140 +356,38 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                return position.Text;
+                if (NodeType == XPathNodeType.Attribute)
+                {
+                    JValue primitive;
+                    if (currentAttribute.IsPrimitive())
+                        primitive = (JValue)currentAttribute.Value;
+                    else
+                    {
+                        // This is a named attribute (like id and contentType) for which only the
+                        // primitive value is relevant, they cannot be extended
+                        primitive = currentAttribute.PrimitivePropertyValue();
+                    }
+
+                    // We accept four primitive json types, convert them to the correct xml string representations
+                    if (primitive.Type == JTokenType.Integer)
+                        return XmlConvert.ToString((Int64)primitive.Value);
+                    else if (primitive.Type == JTokenType.Float)
+                        return XmlConvert.ToString((Decimal)primitive.Value);
+                    else if (primitive.Type == JTokenType.Boolean)
+                        return XmlConvert.ToString((bool)primitive.Value);
+                    else if (primitive.Type == JTokenType.String)
+                        return (string)primitive.Value;
+                    else
+                        throw new FormatException("Only integer, float, boolean and string primitives are allowed in FHIR Json");
+                }
+                else
+                    return position.Element.ElementText();
             }   
         }
 
-        private class NavigatorState
+        public override string ToString()
         {
-            public const string SPEC_NODE_ROOT = "(root)";
-            public const string SPEC_NODE_VALUE = "(value)";
-
-            public NavigatorState(JObject root)
-            {
-                Element = new JProperty(SPEC_NODE_ROOT, root);
-            }
-
-            public NavigatorState(JProperty pos)
-            {
-                Element = pos;
-            }
-
-            public JProperty Element { get; set; }
-            public int? ChildPos { get; set; }
-            public int? ArrayPos { get; set; }
-            public int? AttributePos { get; set; }
-
-            // Transient variable containing cached list of children
-            private IEnumerable<JProperty> _children;
-
-            public IEnumerable<JProperty> Children
-            {
-                get { return _children ?? (_children = getChildren(Element)); }
-            }
-
-            public bool OnRoot
-            {
-                get { return Element.Name == SPEC_NODE_ROOT; }
-            }
-
-            public bool OnElement
-            {
-                get { return !OnRoot && !OnAttribute; }
-            }
-
-            public bool OnValueElement
-            {
-                get { return Element.Name == SPEC_NODE_VALUE; }
-            }
-
-            public bool OnAttribute
-            {
-                get { return AttributePos != null; }
-            }
-
-            public string Text
-            {
-                get
-                {
-                    if (OnValueElement)
-                    {
-                        // This means position.Element is a JProperty pointing to a primitive
-                        return Element.Value.ToString();
-                    }
-                    else
-                    {
-                        return String.Join("", Children.Select(c => new NavigatorState(c).Text));
-                    }
-                }
-            }
-        
-
-            private static IEnumerable<JProperty> getChildren(JProperty parent)
-            {
-                var parentObject = parent.Value as JObject;
-
-                if (parentObject == null)
-                    throw new ArgumentException("Can only get children for a JObject parent", "parent");
-
-                //if (parent.Name == SPEC_NODE_VALUE)
-                //    throw new ArgumentException("Cannot get children for pseudo-primitive (value) node", "parent");
-
-                foreach (var prop in parentObject.Properties())
-                {
-                    var name = prop.Name;
-
-                    // If the property is an Array, return it as sibling properties
-                    if (prop.Value is JArray)
-                    {
-                        foreach (var elem in prop.Value.Children())
-                        {
-                            yield return new JProperty(name, elem);
-                        }
-                    }
-
-                    // If the property is a primitive, transform it to an object with a (value) member
-                    else if (prop.Value is JValue)
-                    {
-                        yield return new JProperty(name, new JObject(new JProperty(SPEC_NODE_VALUE, prop.Value)));
-                    }
-
-                    else
-                        yield return prop;
-                }
-            }
-
-
-            public NavigatorState Copy()
-            {
-                var result = new NavigatorState(Element);
-                result.ChildPos = ChildPos;
-                result.ArrayPos = ArrayPos;
-                result.AttributePos = AttributePos;
-
-                return result;
-            }
-
-            public bool SamePos(NavigatorState other)
-            {
-                return Element == other.Element &&
-                       ChildPos == other.ChildPos &&
-                       ArrayPos == other.ArrayPos &&
-                       AttributePos == other.AttributePos;
-            }
-
-            public override string ToString()
-            {
-                var result = new StringBuilder();
-                if (Element == null) result.Append("[Uninitialized]");
-                if (OnRoot) result.Append("[Root]");
-                if (Element != null) result.AppendFormat("[Element: {0}]",Element.Path);
-                if (ChildPos != null) result.AppendFormat("[ElementIx: {0}]", ChildPos.Value);
-                if (ArrayPos != null) result.AppendFormat("[ArrayIx: {0}]", ArrayPos.Value);
-                if (AttributePos != null) result.AppendFormat("[AttributeIx: {0}]", AttributePos.Value);
-                if (OnValueElement) result.Append("[OnValueElement]");
-                return result.ToString();
-            }
+            return String.Join("/", _state);
         }
     }
 }
