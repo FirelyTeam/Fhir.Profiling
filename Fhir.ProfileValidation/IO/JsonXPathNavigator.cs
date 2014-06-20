@@ -1,4 +1,11 @@
-﻿using System;
+﻿/*
+* Copyright (c) 2014, Furore (info@furore.com) and contributors
+* See the file CONTRIBUTORS for details.
+*
+* This file is licensed under the BSD 3-Clause license
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -50,6 +57,23 @@ namespace Fhir.Profiling.IO
             _nameTable = source._nameTable;
         }
 
+
+        private IEnumerable<JProperty> elementChildren()
+        {
+            return position.Children.Where(c => !isAttribute(c));
+        }
+
+        private IEnumerable<JProperty> attributeChildren()
+        {
+            return position.Children.Where(c => isAttribute(c));
+        }
+
+        private bool isAttribute(JProperty property)
+        {
+            return property.IsPrimitive() || property.Name == SPEC_CHILD_ID;
+        }
+
+
         private void copyState(IEnumerable<NavigatorState> other)
         {
             _state.Clear();
@@ -75,7 +99,7 @@ namespace Fhir.Profiling.IO
             var xpn = other as JsonXPathNavigator;
 
             if (xpn != null)
-                return position.SamePos(xpn.position);
+                return position.IsSameState(xpn.position);
             else
                 throw new NotSupportedException("The other navigator must also be a JsonXPathNavigator");
         }
@@ -177,12 +201,15 @@ namespace Fhir.Profiling.IO
             var child = elementChildren().Skip(index).FirstOrDefault();
             if (child == null) return false;
 
-            position.ChildPos = index;
+            throw new NotImplementedException();
 
-            var newState = new NavigatorState(child);
-            _state.Push(newState);
+            //TODO: need position.NewChildNavigator(index);
+            //position.ChildPos = index;
 
-            return true;
+            //var newState = new NavigatorState(child);
+            //_state.Push(newState);
+
+            //return true;
         }
 
         private bool canMoveToAttributeChild(int index)
@@ -193,12 +220,14 @@ namespace Fhir.Profiling.IO
 
         private bool moveToAttributeChild(int index)
         {
-            var child = attributeChildren().Skip(index).FirstOrDefault();
-            if (child == null) return false;
+            throw new NotImplementedException();
 
-            position.AttributePos = index;
+            //var child = attributeChildren().Skip(index).FirstOrDefault();
+            //if (child == null) return false;
 
-            return true;
+            //position.AttributePos = index;
+
+            //return true;
         }
 
 
@@ -219,8 +248,6 @@ namespace Fhir.Profiling.IO
         {
             if (NodeType == XPathNodeType.Root)
                 return false;
-            else if (NodeType == XPathNodeType.Element)
-
             else
                 throw new NotImplementedException();
         }
@@ -247,7 +274,7 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                return !position.Children.Any() || position.OnNullValueElement;
+                return !position.Children.Any();
             }
         }
 
@@ -292,20 +319,43 @@ namespace Fhir.Profiling.IO
             get { return (NodeType == XPathNodeType.Root) ? nt(String.Empty) : nt(FHIR_PREFIX); }
         }
 
+
+        //public bool OnValueElement
+        //{
+        //    get { return Element.IsPrimitive(); }
+        //}
+
+        //public bool OnNormalElement
+        //{
+        //    get { return !OnRootElement && !OnAttribute && !OnValueElement; }
+        //}
+
+        //public bool OnNullValueElement
+        //{
+        //    get { return OnValueElement && Element.Value.Type == JTokenType.Null; }
+        //}
+
+        //public bool OnAttribute
+        //{
+        //    get { return AttributePos != null; }
+        //}
+
+
         public override XPathNodeType NodeType
         {
             get
             {
-                if (position.OnRootElement)
-                    return XPathNodeType.Root;
-                else if (position.OnNormalElement)
-                    return XPathNodeType.Element;
-                else if (position.OnValueElement)
-                    return XPathNodeType.Text;
-                else
-                {
-                    throw new NotSupportedException("Internal logic error. Can't figure out NodeType. Underlying source is at " + position.ToString());
-                }
+                throw new NotImplementedException();
+                //if (position.OnRootElement)
+                //    return XPathNodeType.Root;
+                //else if (position.OnNormalElement)
+                //    return XPathNodeType.Element;
+                //else if (position.OnValueElement)
+                //    return XPathNodeType.Text;
+                //else
+                //{
+                //    throw new NotSupportedException("Internal logic error. Can't figure out NodeType. Underlying source is at " + position.ToString());
+                //}
             }
         }
 
@@ -314,7 +364,7 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                return position.Text;
+                return position.Element.ElementText();
             }   
         }
 
@@ -327,118 +377,70 @@ namespace Fhir.Profiling.IO
         {
             private const string SPEC_NODE_ROOT = "(root)";
 
-
             public NavigatorState(JObject root)
             {
                 Element = new JProperty(SPEC_NODE_ROOT, root);
             }
 
-            public NavigatorState(JProperty pos)
+            public NavigatorState(JProperty pos, string parentPath)
             {
                 Element = pos;
+                ParentPath = parentPath;
+            }
+
+            internal NavigatorState()
+            {
             }
 
             public JProperty Element { get; private set; }
-            public int? ChildPos { get; set; }
-            public int? AttributePos { get; set; }
+            public int? ChildPos { get; private set; }
+            public int? AttributePos { get; private set; }
+            public string ParentPath { get; private set; }
 
-            // Transient variable containing cached list of children
+            // Transient variable containing cached list of children,
+            // so we safe time recompiling these when navigating back and forth
             private List<JProperty> _children;
 
-            private IEnumerable<JProperty> allChildren
+            public IEnumerable<JProperty> Children
             {
                 get
                 {
-                    if (_children == null) _children = getChildren(Element).ToList();
+                    if (_children == null) _children = Element.ElementChildren().ToList();
                     return _children;
                 }
             }
-
-            public IEnumerable<JProperty> ElementChildren()
-            {
-                return allChildren.Where(c => !isAttribute(c));
-            }
-
-            public IEnumerable<JProperty> AttributeChildren()
-            {
-                return allChildren.Where(c => isAttribute(c));
-            }
-
-            private bool isAttribute(JProperty property)
-            {
-                return property.Name == NavigatorState.SPEC_NODE_VALUE || property.Name == SPEC_CHILD_ID;
-            }
-
+       
             public bool OnRootElement
             {
                 get { return Element.Name == SPEC_NODE_ROOT; }
             }
 
-            public bool OnValueElement
+            public bool IsSameState(NavigatorState other)
             {
-                get { return Element.Name == SPEC_NODE_VALUE; }
+                return ChildPos == other.ChildPos &&
+                        AttributePos == other.AttributePos &&
+                        Path == other.Path;  // Can't compare Element, it's a reference
             }
-
-            public bool OnNormalElement
-            {
-                get { return !OnRootElement && !OnAttribute && !OnValueElement; }
-            }
-
-            public bool OnNullValueElement
-            {
-                get { return OnValueElement && Element.Value.Type == JTokenType.Null; }
-            }
-
-            public bool OnAttribute
-            {
-                get { return AttributePos != null; }
-            }
-
-            public string Text
-            {
-                get
-                {
-                    if (OnAttribute)
-                    {
-                        // This means position.Element is a JProperty pointing to a primitive
-                        return 
-                    }
-                    else
-                    {
-                        return String.Join("", position.GetChildren().Select(c => new NavigatorState(c).Text));
-                    }
-                }
-            }
-        
-
-            private static IEnumerable<JProperty> getChildren(JProperty parent)
-            {
-                var parentObject = parent.Value as JObject;
-
-                if (parentObject == null)
-                    throw new ArgumentException("Can only get children for a JObject parent", "parent");
-
-                //if (parent.Name == SPEC_NODE_VALUE)
-                //    throw new ArgumentException("Cannot get children for pseudo-primitive (value) node", "parent");
-
-              
-            }
-
 
             public NavigatorState Copy()
             {
-                var result = new NavigatorState(Element);
+                var result = new NavigatorState();
+                result.Element = Element;
                 result.ChildPos = ChildPos;
                 result.AttributePos = AttributePos;
+                result.ParentPath = ParentPath;
 
                 return result;
             }
 
-            public bool SamePos(NavigatorState other)
+            public string Name
             {
-                return Element == other.Element &&
-                       ChildPos == other.ChildPos &&
-                       AttributePos == other.AttributePos;
+                get { return Element.Name; }
+            }
+
+            public string Path
+            {
+                get { return ParentPath + "/" + Name; }
             }
 
             public override string ToString()
@@ -448,7 +450,6 @@ namespace Fhir.Profiling.IO
                 var result = new StringBuilder();
 
                 result.Append(Element.Name);
-
                 if (ChildPos != null || AttributePos != null)
                 {
                     result.Append("{");
