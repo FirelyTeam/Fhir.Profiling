@@ -19,11 +19,9 @@ namespace Fhir.Profiling.IO
 {
     internal class NavigatorState
     {
-        private const string SPEC_NODE_ROOT = "(root)";
-
-        public NavigatorState(JObject root)
+        public NavigatorState(JProperty root)
         {
-            Element = new JProperty(SPEC_NODE_ROOT, root);
+            Element = root;
         }
 
         public NavigatorState(JProperty pos, string parentPath)
@@ -52,11 +50,6 @@ namespace Fhir.Profiling.IO
                 if (_children == null) _children = Element.ElementChildren().ToList();
                 return _children;
             }
-        }
-
-        public bool OnRootElement
-        {
-            get { return Element.Name == SPEC_NODE_ROOT; }
         }
 
         public bool IsSameState(NavigatorState other)

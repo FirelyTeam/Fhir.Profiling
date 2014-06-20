@@ -16,6 +16,41 @@ namespace Fhir.Profiling.IO
 {
     internal static class JTokenExtensions
     {
+        private const string PRIMITIVE_PROP_NAME = "(value)";
+        private const string ROOT_PROP_NAME = "(root)";
+
+        private const string RESOURCE_TYPE_PROP_NAME = "resourceType";
+
+        public static JProperty AsElementRoot(this JObject root)
+        {
+            //if (root[RESOURCE_TYPE_PROP_NAME] != null)
+            //{
+            //    var name = root[RESOURCE_TYPE_PROP_NAME] as JValue;
+
+            //    if(name == null || name.Type != JTokenType.String)
+            //        throw new FormatException("Found 'resourceType' property, but it is not a primitive string");
+
+            //    return new JProperty(name.ToString(), root);
+            //}
+            //else
+                return new JProperty(ROOT_PROP_NAME, root);
+        }
+
+        public static string PrimitiveValue(this JProperty token)
+        {
+            if (token.Value is JObject)
+            {
+                var obj = (JObject)token.Value;
+                var prim = obj.Properties().Single();
+                if (prim.IsPrimitive())
+                {
+                    return ((JValue)prim.Value).ToString();
+                }
+            }
+
+            throw new ArgumentException("Property is not a JObject representing a primmitive value", "token");
+        }
+
         public static string ElementText(this JProperty token)
         {
             if (token.Value is JObject)
@@ -35,9 +70,12 @@ namespace Fhir.Profiling.IO
                 throw new InvalidOperationException("Don't know how to get text from a JToken of type " + token.GetType().Name);
         }
 
-        public const string PRIMITIVE_PROP_NAME = "(value)";
 
-        
+        public static bool IsRoot(this JProperty prop)
+        {
+            return prop.Value is JValue && prop.Name == ROOT_PROP_NAME;
+        }
+
         public static bool IsPrimitive(this JProperty prop)
         {
             return prop.Value is JValue && prop.Name == PRIMITIVE_PROP_NAME;
@@ -101,7 +139,7 @@ namespace Fhir.Profiling.IO
                     var elements = ((JArray)child.Value).Children().ToList();
 
                     // Arrays should be a 1-to-1 mapping, so the same size
-                    if (elements.Count != appendixElements.Count)
+                    if (appendixElements != null && elements.Count != appendixElements.Count)
                         throw new FormatException(String.Format("The appendix array for property {0} does have the same number of elements", child.Name));
 
                     for (var index = 0; index < elements.Count; index++)
@@ -118,7 +156,7 @@ namespace Fhir.Profiling.IO
                 // If the property is an Array, return it as sibling properties
                 else if (child.Value is JArray)
                 {
-                    foreach (var elem in prop.Value.Children())
+                    foreach (var elem in child.Value.Children())
                     {
                         var sibling = new JProperty(name, elem);
                         yield return sibling;
