@@ -18,16 +18,13 @@ namespace Fhir.Profiling.Tests
             var nav = buildNav();
 
             // At root;
-            Assert.AreEqual(XPathNodeType.Root,nav.NodeType );
+            Assert.AreEqual(XPathNodeType.Root,nav.NodeType);
             Assert.IsFalse(nav.IsEmptyElement);
             Assert.AreEqual(String.Empty, nav.Name);
             Assert.AreEqual(String.Empty, nav.LocalName);
             Assert.AreEqual(String.Empty, nav.NamespaceURI);
             Assert.AreEqual(String.Empty, nav.Prefix);
-            Assert.IsTrue(nav.Value.StartsWith("MRN2001-05-06Acme Healthcareusualurn:oid:1.2.36.146.595.217.0.112345Organization/1PeterJames" +
-                "officialChalmersJimusualhttp://hl7.org/fhir/example-do-not-use#Patient.avatar#pic1Duck imageurn:example-do-not-use:pi3.141592653589793" +
-                "http://hl7.org/fhir/v3/AdministrativeGenderMMale1974-12http://hl7.org/fhir/example-do-not-use#Patient.avatar#pic1Duck imagetruehome534 Erewhon St" +
-                "PleasantVilleVic3999ASKUhttp://hl7.org/fhir/Profileiso-21090#nullFlavor3generated<div xmlns="));
+            Assert.IsTrue(nav.Value.StartsWith("MRN2001-05-06Acme Healthcareusualurn:oid:1.2.36.146.595.217.0.112345Organization/1PeterJamesofficialChalmersJimusualhttp://hl7.org/fhir/example-do-not-use#Patient.avatar#pic1Duck imageurn:example-do-not-use:pi3.141592653589793http://hl7.org/fhir/v3/AdministrativeGenderMMale1974-12http://hl7.org/fhir/example-do-not-use#DateTime.calendargregoriantruehome534 Erewhon StPleasantVilleVic3999ASKUhttp://hl7.org/fhir/Profileiso-21090#nullFlavor3generated<div xmlns="));
         }
 
 
@@ -153,9 +150,9 @@ namespace Fhir.Profiling.Tests
         {
             var nav = buildNav();
             Assert.IsTrue(nav.MoveToFirstChild());
-            Assert.IsTrue(nav.MoveToFirstChild());      // nodeA
-            Assert.IsTrue(nav.MoveToNext());    // nodeB[0]
-            Assert.IsTrue(nav.MoveToNext());    // nodeB[1]
+            Assert.IsTrue(nav.MoveToFirstChild());   
+            Assert.IsTrue(nav.MoveToNext()); 
+            Assert.IsTrue(nav.MoveToNext());
             Assert.IsTrue(nav.MoveToPrevious());
             Assert.IsTrue(nav.MoveToPrevious());
 
@@ -212,8 +209,8 @@ namespace Fhir.Profiling.Tests
             text = nav.SelectSingleNode("/f:Patient/f:birthDate/@value", mgr);
             Assert.AreEqual("1974-12", text.Value);
 
-            text = nav.SelectSingleNode("/f:Patient/f:birthDate/f:extension[@url='http://hl7.org/fhir/example-do-not-use#Patient.avatar']/f:valueResource/f:display", mgr);
-            Assert.AreEqual("Duck image", text.Value);
+            text = nav.SelectSingleNode("/f:Patient/f:birthDate/f:extension[@url='http://hl7.org/fhir/example-do-not-use#DateTime.calendar']/f:valueCode/@value", mgr);
+            Assert.AreEqual("gregorian", text.Value);
         }
 
 
@@ -230,16 +227,20 @@ namespace Fhir.Profiling.Tests
 
             var result = nav.SelectSingleNode("/f:Patient/f:contained/f:Organization/f:identifier/f:system/@value", mgr);
             Assert.AreEqual("urn:ietf:rfc:3986", result.Value);
+
+            // Test special contentType attr of Binary
+            result = nav.SelectSingleNode("/f:Patient/f:contained/f:Binary/@contentType", mgr);
+            Assert.AreEqual("image/gif", result.Value);
+
+            // Test special text node of Binary
+            result = nav.SelectSingleNode("/f:Patient/f:contained/f:Binary/text()", mgr);
+            Assert.IsNotNull(result);
+            Assert.IsTrue(result.Value.StartsWith("R0lGODlhEwARAPcAAAAAAAAA"));
         }
 
         private static JsonXPathNavigator buildNav()
         {
-            //JsonReader r = new JsonTextReader(new StringReader(@"{ test : { nodeA: 5, nodeB: [4,'hoi',null], nodeC: 'text'} }"));
-            //var nav = new JsonXPathNavigator(r);
-            //return nav;
-
             Stream example = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("Fhir.Profiling.Tests.TestPatient.json");
-
             return new JsonXPathNavigator(new JsonTextReader(new StreamReader(example)));
         }
     }

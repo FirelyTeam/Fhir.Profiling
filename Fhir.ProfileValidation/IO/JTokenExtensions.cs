@@ -29,12 +29,14 @@ namespace Fhir.Profiling.IO
                 if (name == null || name.Type != JTokenType.String)
                     throw new FormatException("Found 'resourceType' property, but it is not a primitive string");
 
-                return new JProperty(name.ToString(), root);
+                var children = root.Properties().Where(prop => prop.Name != RESOURCE_TYPE_PROP_NAME);
+
+                return new JProperty(name.ToString(), new JObject(children));
             }
             else
                 throw new FormatException("Cannot parse this resource, the 'resourceType' property is missing to indicate the type of resource");
         }
-     
+   
         public static string ElementText(this JProperty prop)
         {
             if (prop.IsValueProperty())
@@ -105,6 +107,14 @@ namespace Fhir.Profiling.IO
             var parent = prop.Value as JObject;
             if(parent == null) throw new InvalidOperationException("ElementChildren expects a property that's either a JValue named '(value)' or a JObject");
 
+            // Special case. If we have a complex object with a 'resourceType' property, this is represented as a complex with
+            // a single member, that has the name of the resourceType
+            if (parent[RESOURCE_TYPE_PROP_NAME] != null)
+            {
+                yield return AsResourceRoot(parent);
+                yield break;        // that's all
+            }
+
             // Expand the list once, since we need to scan it anyway, and need to rescan it in some cases
             var children = parent.Properties().ToList();
 
@@ -113,7 +123,7 @@ namespace Fhir.Profiling.IO
                 var name = child.Name;
 
                 if (name.StartsWith("_")) continue;     // Skip, appendix members will be included with their non-"_" part
-                if (name == RESOURCE_TYPE_PROP_NAME) continue;      // Skip, has been used as the root name
+                //if (name == RESOURCE_TYPE_PROP_NAME) continue;      // Skip, has been used as the root name
 
                 if (child.Value is JValue)
                 {

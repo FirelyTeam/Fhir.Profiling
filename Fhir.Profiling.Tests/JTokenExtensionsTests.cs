@@ -124,5 +124,19 @@ namespace Fhir.Profiling.Tests
             Assert.AreEqual("Peter",firstNames.First().PrimitivePropertyValue().Value);
             Assert.AreEqual("James",firstNames.Skip(1).First().PrimitivePropertyValue().Value);
         }
+
+        [TestMethod]
+        public void TestContainedResourceExpansion()
+        {
+            var root = getPatientExample().AsResourceRoot();
+            var children = root.ElementChildren();
+
+            var cont = children.Where(c => c.Name == "contained");
+            Assert.AreEqual(2, cont.Count());
+
+            var cont1 = cont.First();
+            Assert.IsNotNull(cont1.ElementChildren().SingleOrDefault(c => c.Name == "Binary"));
+        }
+
     }
 }

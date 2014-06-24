@@ -22,11 +22,15 @@ namespace Fhir.Profiling.IO
         public const string XHTML_NS = "http://www.w3.org/1999/xhtml";
         public const string FHIR_NS = "http://hl7.org/fhir";
         public const string FHIR_PREFIX = "f";
+        
         public const string SPEC_CHILD_ID = "id";
         public const string SPEC_CHILD_URL = "url";
         public const string SPEC_CHILD_CONTENTTYPE = "contentType";
+        public const string SPEC_CHILD_CONTENT = "content";
+        private const string SPEC_CHILD_VALUE = "value";
+
         private const string ROOT_PROP_NAME = "(root)";
-        private const string VALUE_PROP_NAME = "value";
+
 
         private readonly NameTable _nameTable = new NameTable();
 
@@ -41,10 +45,10 @@ namespace Fhir.Profiling.IO
 
             try
             {
-                var docChild = ((JObject)JObject.Load(reader)).AsResourceRoot();
+                var docChild = (JObject)JObject.Load(reader);
 
-                // Add another symbolic 'root' child, so initially, we are at a virtual "root" element, just like in the DOM model
-                var root = new JProperty(ROOT_PROP_NAME, new JObject(docChild));
+                // Add symbolic 'root' child, so initially, we are at a virtual "root" element, just like in the DOM model
+                var root = new JProperty(ROOT_PROP_NAME, docChild);
                 _state.Push(new NavigatorState(root));
             }
             catch (Exception e)
@@ -56,7 +60,7 @@ namespace Fhir.Profiling.IO
             _nameTable.Add(XHTML_NS);
             _nameTable.Add(String.Empty);
             _nameTable.Add(FHIR_PREFIX);
-            _nameTable.Add(VALUE_PROP_NAME);
+            _nameTable.Add(SPEC_CHILD_VALUE);
         }
 
 
@@ -81,9 +85,14 @@ namespace Fhir.Profiling.IO
         {
             return property.IsValueProperty() ||
                 property.Name == SPEC_CHILD_ID ||               // id attr that all types can have
-                (property.Name == SPEC_CHILD_URL && LocalName == "extension") ||     // url attr of extension
-                (property.Name == SPEC_CHILD_URL && LocalName == "modifierExtension") ||     // url attr of modifierExtension parent
-                (property.Name == SPEC_CHILD_CONTENTTYPE && LocalName == "Binary");     // contentType attr of Binary resource
+                (property.Name == SPEC_CHILD_URL && position.Element.Name == "extension") ||     // url attr of extension
+                (property.Name == SPEC_CHILD_URL && position.Element.Name == "modifierExtension") ||     // url attr of modifierExtension parent
+                (property.Name == SPEC_CHILD_CONTENTTYPE && position.Element.Name == "Binary");     // contentType attr of Binary resource
+        }
+
+        private bool isTextNode(JProperty prop)
+        {
+            return prop.Name == SPEC_CHILD_CONTENT; // && position.Element.Name == "Binary";
         }
 
         private void copyState(IEnumerable<NavigatorState> other)
@@ -140,7 +149,7 @@ namespace Fhir.Profiling.IO
 
         public override bool MoveToNext()
         {
-            if (NodeType == XPathNodeType.Element)
+            if (NodeType == XPathNodeType.Element || NodeType == XPathNodeType.Text)
                 return tryMoveToSibling(1);
             else
                 return false;
@@ -148,7 +157,7 @@ namespace Fhir.Profiling.IO
 
         public override bool MoveToPrevious()
         {
-            if (NodeType == XPathNodeType.Element)
+            if (NodeType == XPathNodeType.Element || NodeType == XPathNodeType.Text)
                 return tryMoveToSibling(-1);
             else
                 return false;
@@ -158,7 +167,7 @@ namespace Fhir.Profiling.IO
         {
             if (NodeType == XPathNodeType.Root)
                 return false;
-            else if (NodeType == XPathNodeType.Element)
+            else if (NodeType == XPathNodeType.Element || NodeType == XPathNodeType.Text)
             {
                 _state.Pop();
                 return true;
@@ -182,7 +191,7 @@ namespace Fhir.Profiling.IO
             var currentState = _state.Pop();
             
             // Can we move?
-            if (NodeType == XPathNodeType.Element)
+            if (NodeType == XPathNodeType.Element || NodeType == XPathNodeType.Text)
             {
                 var newPos = position.ChildPos.Value + delta;
                 if (canMoveToElementChild(newPos))
@@ -320,14 +329,14 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                if (NodeType == XPathNodeType.Root)
+                if (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Text)
                     return nt(String.Empty);
                 else if (NodeType == XPathNodeType.Element)
                     return _nameTable.Add(position.Element.Name);
                 else if (NodeType == XPathNodeType.Attribute)
                 {
                     if (currentAttribute.IsValueProperty())
-                        return nt(VALUE_PROP_NAME);
+                        return nt(SPEC_CHILD_VALUE);
                     else
                         return _nameTable.Add(currentAttribute.Name);
                 }
@@ -345,7 +354,7 @@ namespace Fhir.Profiling.IO
         {
             get 
             {
-                if (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Attribute)
+                if (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Attribute || NodeType == XPathNodeType.Text)
                     return nt(String.Empty);
                 else
                 {
@@ -361,7 +370,7 @@ namespace Fhir.Profiling.IO
 
         public override string Prefix
         {
-            get { return (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Attribute) ? nt(String.Empty) : nt(FHIR_PREFIX); }
+            get { return (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Attribute || NodeType == XPathNodeType.Text) ? nt(String.Empty) : nt(FHIR_PREFIX); }
         }
 
         public override XPathNodeType NodeType
@@ -370,6 +379,8 @@ namespace Fhir.Profiling.IO
             {
                 if (position.Element.Name == ROOT_PROP_NAME)
                     return XPathNodeType.Root;
+                else if (isTextNode(position.Element))
+                    return XPathNodeType.Text;
                 else if (position.AttributePos == null)
                     return XPathNodeType.Element;
                 else if (position.AttributePos != null)
@@ -378,7 +389,6 @@ namespace Fhir.Profiling.IO
                 {
                     throw new NotSupportedException("Internal logic error. Can't figure out NodeType. Underlying source is at " + position.ToString());
                 }
-                //TODO: Simulate Binary.content as NoteType.Text
             }
         }
 
