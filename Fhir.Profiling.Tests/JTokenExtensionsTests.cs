@@ -23,30 +23,31 @@ namespace Fhir.Profiling.Tests
         [TestMethod]
         public void TestBasics()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
 
             Assert.IsNotNull(root);
-            Assert.IsTrue(root.IsRoot());
+            Assert.AreEqual("Patient", root.Name);
 
             var children = root.ElementChildren();
                     
-            Assert.IsTrue(children.Any(c => c.Name == "resourceType"));
+            Assert.IsFalse(children.Any(c => c.Name == "resourceType"));
             Assert.AreEqual(1,children.Count(c => c.Name == "identifier"));
             Assert.AreEqual(2,children.Count(c => c.Name == "name"));
             Assert.AreEqual(1, children.Count(c => c.Name == "birthDate"));
         }
 
+
         [TestMethod]
         public void TestPrimitives()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
             var children = root.ElementChildren();
 
             var bd = children.Single(c => c.Name == "deceasedBoolean");
             Assert.IsTrue(bd.Value is JObject);     // primitive has been turned into a JObject
             var bdVal = (JObject)bd.Value;
             var prim = bdVal.Properties().Single();
-            Assert.IsTrue(prim.IsPrimitive());
+            Assert.IsTrue(prim.IsValueProperty());
             Assert.AreEqual(true, ((JValue)prim.Value).Value);
             Assert.AreEqual(true, bd.PrimitivePropertyValue().Value);
         }
@@ -54,7 +55,7 @@ namespace Fhir.Profiling.Tests
         [TestMethod]
         public void TestComplex()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
             var children = root.ElementChildren();
 
             var bd = children.Single(c => c.Name == "identifier");
@@ -62,10 +63,11 @@ namespace Fhir.Profiling.Tests
             Assert.IsNotNull(((JObject)bd.Value)["label"]);
         }
 
+
         [TestMethod]
         public void TestExtendedProp()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
             var children = root.ElementChildren();
 
             var bd = children.Single(c => c.Name == "birthDate");
@@ -80,7 +82,7 @@ namespace Fhir.Profiling.Tests
         [TestMethod]
         public void TestExtendedPropArray()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
             var children = root.ElementChildren();
 
             var contact = children.Single(c => c.Name == "contact");
@@ -105,7 +107,7 @@ namespace Fhir.Profiling.Tests
         [TestMethod]
         public void TestArrays()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
             var children = root.ElementChildren();
 
             var names = children.Where(c => c.Name == "name");

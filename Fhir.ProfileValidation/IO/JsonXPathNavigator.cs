@@ -23,6 +23,10 @@ namespace Fhir.Profiling.IO
         public const string FHIR_NS = "http://hl7.org/fhir";
         public const string FHIR_PREFIX = "f";
         public const string SPEC_CHILD_ID = "id";
+        public const string SPEC_CHILD_URL = "url";
+        public const string SPEC_CHILD_CONTENTTYPE = "contentType";
+        private const string ROOT_PROP_NAME = "(root)";
+        private const string VALUE_PROP_NAME = "value";
 
         private readonly NameTable _nameTable = new NameTable();
 
@@ -37,8 +41,11 @@ namespace Fhir.Profiling.IO
 
             try
             {
-                var root = (JObject)JObject.Load(reader);
-                _state.Push(new NavigatorState(root.AsElementRoot()));
+                var docChild = ((JObject)JObject.Load(reader)).AsResourceRoot();
+
+                // Add another symbolic 'root' child, so initially, we are at a virtual "root" element, just like in the DOM model
+                var root = new JProperty(ROOT_PROP_NAME, new JObject(docChild));
+                _state.Push(new NavigatorState(root));
             }
             catch (Exception e)
             {
@@ -49,7 +56,9 @@ namespace Fhir.Profiling.IO
             _nameTable.Add(XHTML_NS);
             _nameTable.Add(String.Empty);
             _nameTable.Add(FHIR_PREFIX);
+            _nameTable.Add(VALUE_PROP_NAME);
         }
+
 
         public JsonXPathNavigator(JsonXPathNavigator source)
         {
@@ -58,7 +67,6 @@ namespace Fhir.Profiling.IO
             _nameTable = source._nameTable;
         }
 
-
         private IEnumerable<JProperty> elementChildren()
         {
             return position.Children.Where(c => !isAttribute(c));
@@ -66,14 +74,17 @@ namespace Fhir.Profiling.IO
 
         private IEnumerable<JProperty> attributeChildren()
         {
-            return position.Children.Where(c => isAttribute(c) && !c.IsNullPrimitive());
+            return position.Children.Where(c => isAttribute(c) && !c.IsNullValueProperty());
         }
 
         private bool isAttribute(JProperty property)
         {
-            return property.IsPrimitive() || property.Name == SPEC_CHILD_ID;
+            return property.IsValueProperty() ||
+                property.Name == SPEC_CHILD_ID ||               // id attr that all types can have
+                (property.Name == SPEC_CHILD_URL && LocalName == "extension") ||     // url attr of extension
+                (property.Name == SPEC_CHILD_URL && LocalName == "modifierExtension") ||     // url attr of modifierExtension parent
+                (property.Name == SPEC_CHILD_CONTENTTYPE && LocalName == "Binary");     // contentType attr of Binary resource
         }
-
 
         private void copyState(IEnumerable<NavigatorState> other)
         {
@@ -95,15 +106,13 @@ namespace Fhir.Profiling.IO
             return new JsonXPathNavigator(this);
         }
      
-        public override bool IsSamePosition(XPathNavigator other)
+        public override bool IsSamePosition(XPathNavigator nav)
         {
-            throw new NotImplementedException();
-            //var xpn = other as JsonXPathNavigator;
+            var other = nav as JsonXPathNavigator;
 
-            //if (xpn != null)
-            //    return position.IsSameState(xpn.position);
-            //else
-            //    throw new NotSupportedException("The other navigator must also be a JsonXPathNavigator");
+            if (other == null) return false;
+
+            return _state.SequenceEqual(other._state);
         }
 
         public override bool MoveTo(XPathNavigator other)
@@ -240,19 +249,11 @@ namespace Fhir.Profiling.IO
             {
                 if (position.AttributePos != null)
                 {
-                    attributeChildren().Skip(position.AttributePos.Value);
+                    return attributeChildren().Skip(position.AttributePos.Value).First();
                 }
 
                 return null;
             }
-        }
-
-        public override bool MoveToFirstNamespace(XPathNamespaceScope namespaceScope)
-        {
-            if (NodeType == XPathNodeType.Root)
-                return false;
-            else
-                throw new NotImplementedException();
         }
 
         public override bool MoveToId(string id)
@@ -276,9 +277,21 @@ namespace Fhir.Profiling.IO
                 return false;
         }
 
+
+        public override bool MoveToFirstNamespace(XPathNamespaceScope namespaceScope)
+        {
+            if (NodeType == XPathNodeType.Root)
+                return false;
+            else
+                throw new NotImplementedException();
+        }
+
         public override bool MoveToNextNamespace(XPathNamespaceScope namespaceScope)
         {
-            throw new NotImplementedException();
+            if (NodeType == XPathNodeType.Root)
+                return false;
+            else
+                throw new NotImplementedException();
         }
 
         private string nt(string val)
@@ -312,9 +325,14 @@ namespace Fhir.Profiling.IO
                 else if (NodeType == XPathNodeType.Element)
                     return _nameTable.Add(position.Element.Name);
                 else if (NodeType == XPathNodeType.Attribute)
-                    return _nameTable.Add(currentAttribute.Name);
+                {
+                    if (currentAttribute.IsValueProperty())
+                        return nt(VALUE_PROP_NAME);
+                    else
+                        return _nameTable.Add(currentAttribute.Name);
+                }
                 else
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("Don't know how to get LocalName when at node of type " + NodeType.ToString());
             }
         }
 
@@ -325,7 +343,20 @@ namespace Fhir.Profiling.IO
 
         public override string NamespaceURI
         {
-            get { return (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Attribute) ? nt(String.Empty) : nt(FHIR_NS); }
+            get 
+            {
+                if (NodeType == XPathNodeType.Root || NodeType == XPathNodeType.Attribute)
+                    return nt(String.Empty);
+                else
+                {
+                    // Check for the special <div> element, which comes from the xhtml namespace. Otherwise,
+                    // return the FHIR namespace
+                    if (LocalName == "div")
+                        return nt(XHTML_NS);
+                    else
+                        return nt(FHIR_NS);
+                }
+            }
         }
 
         public override string Prefix
@@ -337,7 +368,7 @@ namespace Fhir.Profiling.IO
         {
             get
             {
-                if (position.Element.IsRoot())
+                if (position.Element.Name == ROOT_PROP_NAME)
                     return XPathNodeType.Root;
                 else if (position.AttributePos == null)
                     return XPathNodeType.Element;
@@ -358,27 +389,16 @@ namespace Fhir.Profiling.IO
             {
                 if (NodeType == XPathNodeType.Attribute)
                 {
-                    JValue primitive;
-                    if (currentAttribute.IsPrimitive())
-                        primitive = (JValue)currentAttribute.Value;
+                    if (currentAttribute.IsValueProperty())
+                        return currentAttribute.ElementText();
                     else
                     {
                         // This is a named attribute (like id and contentType) for which only the
                         // primitive value is relevant, they cannot be extended
-                        primitive = currentAttribute.PrimitivePropertyValue();
+                        // Note that ElementText() will join all subnodes (in this case only one) into
+                        // one string, so this *currently* works.
+                        return currentAttribute.ElementText();
                     }
-
-                    // We accept four primitive json types, convert them to the correct xml string representations
-                    if (primitive.Type == JTokenType.Integer)
-                        return XmlConvert.ToString((Int64)primitive.Value);
-                    else if (primitive.Type == JTokenType.Float)
-                        return XmlConvert.ToString((Decimal)primitive.Value);
-                    else if (primitive.Type == JTokenType.Boolean)
-                        return XmlConvert.ToString((bool)primitive.Value);
-                    else if (primitive.Type == JTokenType.String)
-                        return (string)primitive.Value;
-                    else
-                        throw new FormatException("Only integer, float, boolean and string primitives are allowed in FHIR Json");
                 }
                 else
                     return position.Element.ElementText();
