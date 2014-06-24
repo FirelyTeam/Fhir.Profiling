@@ -19,11 +19,9 @@ namespace Fhir.Profiling.IO
 {
     internal class NavigatorState : IEqualityComparer<NavigatorState>, IEquatable<NavigatorState>
     {
-        //public NavigatorState(JProperty pos, bool isRoot = false)
         public NavigatorState(JProperty pos)
         {
             Element = pos;
-            //IsRoot = isRoot;
         }
 
         private NavigatorState()
@@ -33,7 +31,7 @@ namespace Fhir.Profiling.IO
         public JProperty Element { get; private set; }
         public int? ChildPos { get; set; }
         public int? AttributePos { get; set; }
-        //public bool IsRoot { get; set; }
+        public int? NamespacePos { get; set; }
 
         // Transient variable containing cached list of children,
         // so we safe time recompiling these when navigating back and forth
@@ -54,7 +52,7 @@ namespace Fhir.Profiling.IO
             result.Element = Element;
             result.ChildPos = ChildPos;
             result.AttributePos = AttributePos;
-//            result.IsRoot = IsRoot;
+            result.NamespacePos = NamespacePos;
 
             return result;
         }
@@ -66,10 +64,9 @@ namespace Fhir.Profiling.IO
             var result = new StringBuilder();
 
             result.Append(Element.Name);
-//            if(IsRoot) result.Append("[IsRoot]");          
             if(ChildPos != null) result.AppendFormat("[At Child {0}]", ChildPos.Value);
             if (AttributePos != null) result.AppendFormat("[At Attr {0}]", AttributePos.Value);
-
+            if (NamespacePos != null) result.AppendFormat("[At Nspc {0}]", NamespacePos.Value);
             return result.ToString();
         }
 
@@ -80,16 +77,18 @@ namespace Fhir.Profiling.IO
 
         public bool Equals(NavigatorState x, NavigatorState y)
         {
-            //return x.Element.Name == y.Element.Name && x.ChildPos == y.ChildPos && x.AttributePos == y.AttributePos && x.IsRoot == y.IsRoot;
-            return x.Element.Name == y.Element.Name && x.ChildPos == y.ChildPos && x.AttributePos == y.AttributePos;
+            return x.Element.Name == y.Element.Name && x.ChildPos == y.ChildPos &&
+                    x.AttributePos == y.AttributePos && x.NamespacePos == y.NamespacePos;
         }
 
         public int GetHashCode(NavigatorState obj)
         {
             if(obj == null) return 0;
 
-            //return obj.Element.Name.GetHashCode() ^ obj.ChildPos ?? 0 ^ obj.AttributePos ?? 0 ^ (IsRoot ? 1 : 0);
-            return obj.Element.Name.GetHashCode() ^ obj.ChildPos ?? 0 ^ obj.AttributePos ?? 0;
+            return obj.Element.Name.GetHashCode() ^
+                obj.ChildPos ?? 0 ^
+                obj.AttributePos ?? 0 ^
+                obj.NamespacePos ?? 0;
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using System.Xml.XPath;
+using System.Xml.Xsl;
 using Fhir.Profiling.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -236,6 +237,33 @@ namespace Fhir.Profiling.Tests
             result = nav.SelectSingleNode("/f:Patient/f:contained/f:Binary/text()", mgr);
             Assert.IsNotNull(result);
             Assert.IsTrue(result.Value.StartsWith("R0lGODlhEwARAPcAAAAAAAAA"));
+        }
+
+        [TestMethod]
+        public void TestTransform()
+        { 
+            string identityTransform = @"<xsl:stylesheet version=""1.0"" xmlns:xsl=""http://www.w3.org/1999/XSL/Transform"">" +
+                    @"<xsl:template match=""@*|node()"">" +
+                    @"<xsl:copy>" +
+                            @"<xsl:apply-templates select=""@*""/>" +
+                            @"<xsl:apply-templates select=""node()""/>" +
+                        @"</xsl:copy>" +
+                    @"</xsl:template>" +
+                    @"</xsl:stylesheet>";
+
+            IXPathNavigable navCreator = buildNav();
+            var nav = navCreator.CreateNavigator();
+            Assert.IsNotNull(nav);
+            Assert.AreEqual(XPathNodeType.Root, nav.NodeType);
+
+            StringWriter sw = new StringWriter();
+            XmlWriter xmlw = XmlWriter.Create(sw);
+            XslCompiledTransform xslt = new XslCompiledTransform();
+            xslt.Load(XmlReader.Create(new StringReader(identityTransform)));
+            xslt.Transform(navCreator, xmlw);
+            xmlw.Flush();
+
+            Assert.AreEqual("", sw.ToString());
         }
 
         private static JsonXPathNavigator buildNav()
