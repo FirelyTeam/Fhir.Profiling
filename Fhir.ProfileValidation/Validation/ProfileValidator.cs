@@ -20,24 +20,27 @@ namespace Fhir.Profiling
         private Report report = new Report();
         private Profile profile;
         private List<string> structureNames = new List<string>();
-        private ConstraintValidator constraintValidator;
+        
 
         public ProfileValidator(Profile profile)
         {
             report.Clear();
             this.profile = profile;
-            this.constraintValidator = new ConstraintValidator(report);
         }
 
         public void ValidateConstraint(Element element, Constraint constraint)
         {
-            string message;
-            bool valid = this.constraintValidator.Validate(constraint, out message);
-            if (!valid)
+
+            if (constraint.IsValid)
             {
-                report.Add("Profile Constraint", Kind.Invalid,  message);
+                report.Add("Profile Constraint", Kind.Valid, "Constraint is valid");
             }
-            
+            else 
+            {
+                 report.Add("Profile Constraint", Kind.Invalid, 
+                     "Constraint [{0}] has an invalid XPath: {1}", 
+                     constraint.Name, constraint.CompilerError.Message);
+            }
         }
 
         public void ValidateConstraints(Element element)
@@ -99,8 +102,8 @@ namespace Fhir.Profiling
 
         public void ValidateStructure(Structure structure)
         {
-            if (structure.IsPrimitive)
-                return; // there is no more detail.
+            //if (structure.IsPrimitive)
+             //   return; // there is no more detail.
 
             foreach (Element element in structure.Elements)
             {

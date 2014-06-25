@@ -650,11 +650,12 @@
             <use value="home"/>
             <line value="5555 Home Street"/>
           </address>
-
-        <managingOrganization>
-          <reference value="Organization/hl7"/>
-        </managingOrganization>
-        <active value="true"/>
+        <contact>
+            <managingOrganization>
+              <reference value="Organization/hl7"/>
+            </managingOrganization>
+        </contact>
+          <active value="true"/>
       </Patient>
     </content>
     <summary type="xhtml">
@@ -663,3 +664,16 @@
     </summary>
   </entry>
 </feed>
+
+
+
+<element>
+  <name value="contact">
+    <slicing>
+      <discriminator value="managingOrganization.name" />
+    </slicing>
+</element>
+
+// impliciet:  skip <reference>, skip <Organization> 
+  
+  //

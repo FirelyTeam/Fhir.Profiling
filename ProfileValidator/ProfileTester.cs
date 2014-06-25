@@ -11,18 +11,17 @@ namespace ProfileValidation
 {
     class ProfileTester : Tester
     {
-
         protected override Profile LoadProfile()
         {
             Profile profile = new Profile();
 
             //profile.Add(ProfileFactory.MetaTypesProfile());
             //profile.Add(ProfileFactory.DataTypesProfile());
-             profile.Add(ProfileFactory.PrimitiveTypesProfile());
+            profile.Add(ProfileFactory.PrimitiveTypesProfile());
             //profile.LoadXMLValueSets("Data\\valuesets.xml");
             //profile.LoadXmlFile("Data\\type-HumanName.profile.xml");
-            //profile.LoadXmlFile("Data\\type-Identifier.profile.xml")
-
+            //profile.LoadXmlFile("Data\\type-Identifier.profile.xml");
+            profile.LoadXmlFile("Data\\type-ResourceReference.profile.xml");
 
             profile.LoadXmlFile("Data\\profile.profile.xml");
             return profile;

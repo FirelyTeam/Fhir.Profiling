@@ -34,6 +34,7 @@ namespace Fhir.Profiling
         public string ElementRefPath { get; set; }
         public Element ElementRef { get; set; }
         public List<Element> Children = new List<Element>();
+        public Slicing Slicing { get; set; }
         public bool Multi
         {
             get 
@@ -48,6 +49,7 @@ namespace Fhir.Profiling
                 return Path.Count == 1;
             }
         }
+        public bool Sliced { get { return Slicing != null; } }
         public string NodeMatch
         {
             get
@@ -66,9 +68,22 @@ namespace Fhir.Profiling
             }
         }
 
+        public bool NodeNameIsMatch(string name)
+        {
+            if (Segment.Multi)
+            {
+                return name.StartsWith(this.Name);
+            }
+            else
+            {
+                return name == Name;
+            }
+        }
+
         public bool HasChild(string name)
         {
-            return this.Children.FirstOrDefault(c => c.Name == name) != null;
+            return this.Children.FirstOrDefault(c => c.NodeNameIsMatch(name)) != null;
+
         }
         public bool HasChildren
         {

@@ -96,23 +96,51 @@ namespace Fhir.Profiling
             }   
         }
 
-        public void ReadSlices(Element element, XPathNavigator node)
+        public bool IsSliced(XPathNavigator node)
         {
-
+            bool sliced = OptionalValue(node, "slicing") != null;
+            return sliced;
         }
-     
-        public Element ReadElement(XPathNavigator node)
+
+        public void ReadSlicing(Element element, XPathNavigator node)
         {
-            Element element = new Element();
+            Slicing slicing = new Slicing();
+            slicing.Discriminator = new Path(Value(node, "f:slicing/f:discriminator/@value"));
+            slicing.Rule = (SlicingRules)Enum.Parse(typeof(SlicingRules), Value(node, "f:slicing/f:rules/@value"));
+            slicing.Ordered = (Value(node, "f:slicing/f:ordered/@value").ToLower() == "true");
+            element.Slicing = slicing;
+        }
+
+        public void ReadElementDefinition(Element element, XPathNavigator node)
+        {
             ReadPath(element, node);
             ReadReference(element, node);
             ReadTypeRefs(element, node);
             ReadElementRef(element, node);
             ReadCardinality(element, node);
             ReadConstraints(element, node);
-            ReadSlices(element, node);
-            
+        }
+     
+        public Element ReadElement(XPathNavigator node)
+        {
+            Element element = new Element();
+            if (IsSliced(node))
+            {
+                ReadSlicing(element, node);
+            }
+            else 
+            {
+                ReadElementDefinition(element, node);
+            }
             return element;
+        }
+
+        public void ReadStructureElements(Structure structure, XPathNodeIterator xElements)
+        {
+            foreach (XPathNavigator xElement in xElements)
+            {
+                structure.Elements.Add(ReadElement(xElement));
+            }
         }
 
         public Structure ReadStructure(XPathNavigator node)
@@ -120,12 +148,8 @@ namespace Fhir.Profiling
             Structure structure = new Structure();
             structure.Name = node.SelectSingleNode("f:type/@value", ns).Value;
             structure.Namespace = Namespace.Fhir;
-            XPathNodeIterator xElements = node.Select("f:element", ns);
-            foreach (XPathNavigator xElement in xElements)
-            {
-                structure.Elements.Add(ReadElement(xElement));
-            }
-            structure.BuildHierarchy();
+            ReadStructureElements(structure, node.Select("f:element", ns));
+            structure.LinkElements();
             return structure;
         }
 

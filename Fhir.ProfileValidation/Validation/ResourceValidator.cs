@@ -20,15 +20,6 @@ namespace Fhir.Profiling
         private Profile Profile = new Profile();
         private Report report = new Report();
 
-        public static class Category
-        {
-            public const string Cardinality = "Cardinality";
-            public const string Constraint = "Constraint";
-            public const string Start = "Start";
-            public const string End = "End";
-            public const string Code = "Code";
-        }
-
         public ResourceValidator(Profile profile)
         {
             this.Profile = profile;
@@ -46,12 +37,23 @@ namespace Fhir.Profiling
 
         public void ValidateCode(Vector vector)
         {
+            if (vector.Element.Binding == null)
+                return;
+
             string value = vector.GetValue("@value");
             bool exists = vector.Element.Binding.Contains(value);
-            Kind kind = exists? Kind.Valid : Kind.Invalid;
-            report.Add("Coding", kind, vector, 
-                "Code [{0}] ({1}) contains a nonexisting value [{2}]", 
-                vector.Element.Name, vector.Element.Binding.System, value);
+            
+            if (exists)
+            {
+                report.Add("Coding", Kind.Valid, vector, "Code [{0}] ({1}) is valid [{2}]",
+                    vector.Element.Name, vector.Element.Binding.System, value);
+            }
+            else
+            {
+                report.Add("Coding", Kind.Invalid, vector, "Code [{0}] ({1}) contains a nonexisting value [{2}]",
+                    vector.Element.Name, vector.Element.Binding.System, value);
+            }
+            
         }
 
         public void ValidateCardinality(Vector vector)
@@ -59,11 +61,11 @@ namespace Fhir.Profiling
             int count = vector.Count(); 
             if (vector.Element.Cardinality.InRange(count))
             {
-                report.Add(Category.Cardinality, Kind.Valid, vector, "Cardinality of element [{0}] is valid", vector.Element.Name);
+                report.Add("Cardinality", Kind.Valid, vector, "Cardinality of element [{0}] is valid", vector.Element.Name);
             }
             else 
             {
-                report.Add(Category.Cardinality, Kind.Invalid, vector, 
+                report.Add("Cardinality", Kind.Invalid, vector, 
                     "Element [{0}] occurrence ({3}) under [{1}] is out of range ({2})", 
                     vector.Element.Name, vector.NodePath(), vector.Element.Cardinality, count);
             }
@@ -73,11 +75,18 @@ namespace Fhir.Profiling
         {
             if (constraint.IsValid)
             {
-                bool valid = vector.Evaluate(constraint);
-                if (valid)
-                    report.Add(Category.Constraint, Kind.Valid, vector, "Constraint {0} is valid", constraint.Name);
-                else
-                    report.Add(Category.Constraint, Kind.Invalid, vector, "Constraint [{0}] fails", constraint.Name);
+                try
+                {
+                    bool valid = vector.Evaluate(constraint);
+                    if (valid)
+                        report.Add("Constraint", Kind.Valid, vector, "Node [{0}] conforms to constraint [{1}]", vector.Node.Name, constraint.Name);
+                    else
+                        report.Add("Constraint", Kind.Invalid, vector, "Node [{0}] does not conform to constraint [{1}]: {2} ", vector.Node.Name, constraint.Name, constraint.XPath);
+                }
+                catch (XPathException e)
+                {
+                    report.Add("Constraint", Kind.Invalid, vector, "Evaluation of constraint [{0}] evaluation failed: {1}", constraint.Name, e.Message);
+                }
             }
         }
 
@@ -149,17 +158,13 @@ namespace Fhir.Profiling
 
         public void ValidateSlices(Vector vector)
         {
-            // 
+             
         }
 
         public void ValidateElement(Vector vector)
         {
             report.Start("element", vector);
-            if (vector.Element.Binding != null) // if element is a code element, treat it differently.
-            {
-                ValidateCode(vector);
-                return;
-            }
+            ValidateCode(vector);
             ValidateConstraints(vector);
             ValidateStructures(vector);
             ValidatePrimitive(vector);
@@ -226,5 +231,6 @@ namespace Fhir.Profiling
 
             return this.report;
         }
+
     }
 }

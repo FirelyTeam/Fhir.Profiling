@@ -47,7 +47,7 @@
     <Compile Include="IO\JsonReaderExtensions.cs" />
     <Compile Include="Validation\Cardinality.cs" />
     <Compile Include="Validation\Constraint.cs" />
-    <Compile Include="Validation\ConstraintValidator.cs" />
+    <Compile Include="Validation\ConstraintCompiler.cs" />
     <Compile Include="Validation\Element.cs" />
     <Compile Include="Validation\Path.cs" />
     <Compile Include="Validation\ProfileValidator.cs" />
@@ -65,6 +65,7 @@
     <Compile Include="Validation\Report.cs" />
     <Compile Include="Validation\Profile.cs" />
     <Compile Include="Validation\ResourceValidator.cs" />
+    <Compile Include="Validation\XPath2Context.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

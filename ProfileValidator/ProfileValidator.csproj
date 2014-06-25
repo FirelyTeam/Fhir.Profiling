@@ -125,6 +125,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </Content>
+    <Content Include="Data\type-ResourceReference.profile.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Data\valueset.example.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

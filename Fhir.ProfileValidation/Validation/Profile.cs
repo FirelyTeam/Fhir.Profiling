@@ -15,16 +15,25 @@ using System.Xml.XPath;
 namespace Fhir.Profiling
 {
 
+    public enum SlicingRules { OpenAtEnd };
+
+    public class Slicing
+    {
+        public Path Discriminator { get; set; }
+        public bool Ordered { get; set; }
+        public SlicingRules Rule { get; set; }
+        public List<Element> Elements = new List<Element>();
+    }
+
     public class Profile
     {
         public List<ValueSet> ValueSets = new List<ValueSet>();
-        
         public List<Structure> Structures = new List<Structure>();
 
         public void Add(List<Structure> structures)
         {
             this.Structures.AddRange(structures);
-            AddInternalReferences();
+            Surrect();
         }
         
         public void Add(IEnumerable<ValueSet> valuesets)
@@ -46,7 +55,14 @@ namespace Fhir.Profiling
             }
         }
 
-       
+        public IEnumerable<Constraint> Constraints
+        {
+            get
+            {
+                return Elements.SelectMany(e => e.Constraints);
+            }
+        }
+
         public IEnumerable<TypeRef> NewTypeRefs
         {
             get 
@@ -55,19 +71,37 @@ namespace Fhir.Profiling
             }
         }
 
-        private void AddInternalReferences()
+        /// <summary>
+        /// Make the profile complete and usable by linking all internal structures and perform precompilation
+        /// </summary>
+        private void Surrect()
         {
-            foreach(Element element in Elements)
+            _linkBindings();
+            _linkStructures();
+            _linkElements();
+            _compileConstraints();
+        }
+
+        private void _linkBindings()
+        {
+            foreach (Element element in Elements)
             {
                 if (element.BindingUri != null)
                     element.Binding = this.GetValueSetByUri(element.BindingUri);
             }
+        }
 
+        private void _linkStructures()
+        {
             foreach (TypeRef typeref in NewTypeRefs)
             {
                 typeref.Structure = this.GetStructureByName(typeref.Code);
             }
 
+        }
+
+        private void _linkElements()
+        {
             foreach (Structure structure in Structures)
             {
                 foreach (Element element in Elements)
@@ -77,36 +111,29 @@ namespace Fhir.Profiling
             }
         }
 
+        private void _compileConstraints()
+        {
+            foreach(Constraint c in Constraints)
+            {
+                if (!c.Compiled) 
+                    ConstraintCompiler.Compile(c);
+            }
+        }
+
         public Structure GetStructureByName(string name)
         {
-            foreach (Structure s in Structures)
-            {
-                if (s.Name == name)
-                    return s;
-            }
-            return null;
+            return Structures.FirstOrDefault(s => s.Name == name);
         }
 
         public ValueSet GetValueSetByUri(string uri)
         {
-            foreach (ValueSet valueset in ValueSets)
-            {
-                if (valueset.System == uri)
-                    return valueset;
-            }
-            return null;
+            return ValueSets.FirstOrDefault(v => v.System == uri);
         }
        
         public Element GetElementByName(Structure structure, string path)
         {
-            foreach(Element element in structure.Elements)
-            {
-                if (element.Path.ToString() == path)
-                {
-                    return element;
-                }
-            }
-            return null;
+            return structure.Elements.FirstOrDefault(element => element.Path.ToString() == path);
         }
     }
+
 }

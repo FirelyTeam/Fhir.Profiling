@@ -9,13 +9,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.XPath;
 
 namespace Fhir.Profiling
 {
-    public struct Constraint
+    public class Constraint
     {
+        public Constraint()
+        {
+            Compiled = false;
+            IsValid = false;
+        }
         public string Name;
         public string XPath;
+        public XPathExpression Expression {get ; set; }
         public bool IsValid;
+        public bool Compiled { get; set; }
+        public Exception CompilerError { get; set; }
+        public override string ToString()
+        {
+            return string.Format("{0} [{1}]: {2}", Name, IsValid ? "Valid" : "Invalid", XPath);
+        }
     }
 }
