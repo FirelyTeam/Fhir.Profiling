@@ -23,30 +23,31 @@ namespace Fhir.Profiling.Tests
         [TestMethod]
         public void TestBasics()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
 
             Assert.IsNotNull(root);
-            Assert.IsTrue(root.IsRoot());
+            Assert.AreEqual("Patient", root.Name);
 
             var children = root.ElementChildren();
                     
-            Assert.IsTrue(children.Any(c => c.Name == "resourceType"));
+            Assert.IsFalse(children.Any(c => c.Name == "resourceType"));
             Assert.AreEqual(1,children.Count(c => c.Name == "identifier"));
             Assert.AreEqual(2,children.Count(c => c.Name == "name"));
             Assert.AreEqual(1, children.Count(c => c.Name == "birthDate"));
         }
 
+
         [TestMethod]
         public void TestPrimitives()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
             var children = root.ElementChildren();
 
             var bd = children.Single(c => c.Name == "deceasedBoolean");
             Assert.IsTrue(bd.Value is JObject);     // primitive has been turned into a JObject
             var bdVal = (JObject)bd.Value;
             var prim = bdVal.Properties().Single();
-            Assert.IsTrue(prim.IsPrimitive());
+            Assert.IsTrue(prim.IsValueProperty());
             Assert.AreEqual(true, ((JValue)prim.Value).Value);
             Assert.AreEqual(true, bd.PrimitivePropertyValue().Value);
         }
@@ -54,7 +55,7 @@ namespace Fhir.Profiling.Tests
         [TestMethod]
         public void TestComplex()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
             var children = root.ElementChildren();
 
             var bd = children.Single(c => c.Name == "identifier");
@@ -62,25 +63,28 @@ namespace Fhir.Profiling.Tests
             Assert.IsNotNull(((JObject)bd.Value)["label"]);
         }
 
+
         [TestMethod]
         public void TestExtendedProp()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
             var children = root.ElementChildren();
 
             var bd = children.Single(c => c.Name == "birthDate");
             Assert.AreEqual("1974-12", bd.PrimitivePropertyValue().Value);
             Assert.IsNotNull(((JObject)bd.Value)["extension"]);
 
-            var active = children.Single(c => c.Name == "active");
-            Assert.AreEqual(null, active.PrimitivePropertyValue().Value); // !!!! there are extensions, but no value
-            Assert.IsNotNull(((JObject)bd.Value)["extension"]);           
+            var active = (JObject)children.Single(c => c.Name == "active").Value;
+
+            JToken crap;
+            Assert.IsFalse(active.TryGetValue("(value)", out crap)); // !!!! there are extensions, but no value
+            Assert.IsNotNull(active["extension"]);           
         }
 
         [TestMethod]
         public void TestExtendedPropArray()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
             var children = root.ElementChildren();
 
             var contact = children.Single(c => c.Name == "contact");
@@ -90,7 +94,7 @@ namespace Fhir.Profiling.Tests
             Assert.AreEqual(5, familyNames.Count());
 
             var firstFam = familyNames.First();
-            Assert.AreEqual(null, firstFam.PrimitivePropertyValue().Value);
+            Assert.AreEqual(null, firstFam.PrimitivePropertyValue());
             Assert.IsNotNull(((JObject)firstFam.Value)["extension"]);
 
             var scndFam = familyNames.Skip(1).First();
@@ -105,7 +109,7 @@ namespace Fhir.Profiling.Tests
         [TestMethod]
         public void TestArrays()
         {
-            var root = getPatientExample().AsElementRoot();
+            var root = getPatientExample().AsResourceRoot();
             var children = root.ElementChildren();
 
             var names = children.Where(c => c.Name == "name");
@@ -122,5 +126,19 @@ namespace Fhir.Profiling.Tests
             Assert.AreEqual("Peter",firstNames.First().PrimitivePropertyValue().Value);
             Assert.AreEqual("James",firstNames.Skip(1).First().PrimitivePropertyValue().Value);
         }
+
+        [TestMethod]
+        public void TestContainedResourceExpansion()
+        {
+            var root = getPatientExample().AsResourceRoot();
+            var children = root.ElementChildren();
+
+            var cont = children.Where(c => c.Name == "contained");
+            Assert.AreEqual(2, cont.Count());
+
+            var cont1 = cont.First();
+            Assert.IsNotNull(cont1.ElementChildren().SingleOrDefault(c => c.Name == "Binary"));
+        }
+
     }
 }

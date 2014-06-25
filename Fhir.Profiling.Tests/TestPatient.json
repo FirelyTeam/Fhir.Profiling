@@ -48,11 +48,8 @@
     "birthDate": "1974-12",
     "deceasedBoolean": true,
     "_birthDate": {"extension": [{
-        "url": "http://hl7.org/fhir/example-do-not-use#Patient.avatar",
-        "valueResource": {
-            "reference": "#pic1",
-            "display": "Duck image"
-        }
+        "url": "http://hl7.org/fhir/example-do-not-use#DateTime.calendar",
+        "valueCode": "gregorian"
     }]},
     "address": [{
         "use": "home",

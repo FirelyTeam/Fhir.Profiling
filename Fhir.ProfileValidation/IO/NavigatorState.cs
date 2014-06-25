@@ -17,7 +17,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Fhir.Profiling.IO
 {
-    internal class NavigatorState
+    internal class NavigatorState : IEqualityComparer<NavigatorState>, IEquatable<NavigatorState>
     {
         public NavigatorState(JProperty pos)
         {
@@ -31,6 +31,7 @@ namespace Fhir.Profiling.IO
         public JProperty Element { get; private set; }
         public int? ChildPos { get; set; }
         public int? AttributePos { get; set; }
+        public int? NamespacePos { get; set; }
 
         // Transient variable containing cached list of children,
         // so we safe time recompiling these when navigating back and forth
@@ -44,13 +45,14 @@ namespace Fhir.Profiling.IO
                 return _children;
             }
         }
-
+ 
         public NavigatorState Copy()
         {
             var result = new NavigatorState();
             result.Element = Element;
             result.ChildPos = ChildPos;
             result.AttributePos = AttributePos;
+            result.NamespacePos = NamespacePos;
 
             return result;
         }
@@ -62,15 +64,31 @@ namespace Fhir.Profiling.IO
             var result = new StringBuilder();
 
             result.Append(Element.Name);
-            if (ChildPos != null || AttributePos != null)
-            {
-                result.Append("{");
-                if (ChildPos != null) result.AppendFormat("Child: {0},", ChildPos.Value);
-                if (AttributePos != null) result.AppendFormat("Attr: {0},", AttributePos.Value);
-                result.Append("}");
-            }
-
+            if(ChildPos != null) result.AppendFormat("[At Child {0}]", ChildPos.Value);
+            if (AttributePos != null) result.AppendFormat("[At Attr {0}]", AttributePos.Value);
+            if (NamespacePos != null) result.AppendFormat("[At Nspc {0}]", NamespacePos.Value);
             return result.ToString();
+        }
+
+        public bool Equals(NavigatorState other)
+        {
+            return Equals(this, other);
+        }
+
+        public bool Equals(NavigatorState x, NavigatorState y)
+        {
+            return x.Element.Name == y.Element.Name && x.ChildPos == y.ChildPos &&
+                    x.AttributePos == y.AttributePos && x.NamespacePos == y.NamespacePos;
+        }
+
+        public int GetHashCode(NavigatorState obj)
+        {
+            if(obj == null) return 0;
+
+            return obj.Element.Name.GetHashCode() ^
+                obj.ChildPos ?? 0 ^
+                obj.AttributePos ?? 0 ^
+                obj.NamespacePos ?? 0;
         }
     }
 }
