@@ -74,9 +74,11 @@ namespace Fhir.Profiling.Tests
             Assert.AreEqual("1974-12", bd.PrimitivePropertyValue().Value);
             Assert.IsNotNull(((JObject)bd.Value)["extension"]);
 
-            var active = children.Single(c => c.Name == "active");
-            Assert.AreEqual(null, active.PrimitivePropertyValue().Value); // !!!! there are extensions, but no value
-            Assert.IsNotNull(((JObject)bd.Value)["extension"]);           
+            var active = (JObject)children.Single(c => c.Name == "active").Value;
+
+            JToken crap;
+            Assert.IsFalse(active.TryGetValue("(value)", out crap)); // !!!! there are extensions, but no value
+            Assert.IsNotNull(active["extension"]);           
         }
 
         [TestMethod]
@@ -92,7 +94,7 @@ namespace Fhir.Profiling.Tests
             Assert.AreEqual(5, familyNames.Count());
 
             var firstFam = familyNames.First();
-            Assert.AreEqual(null, firstFam.PrimitivePropertyValue().Value);
+            Assert.AreEqual(null, firstFam.PrimitivePropertyValue());
             Assert.IsNotNull(((JObject)firstFam.Value)["extension"]);
 
             var scndFam = familyNames.Skip(1).First();

@@ -86,7 +86,7 @@ namespace Fhir.Profiling.IO
 
         private IEnumerable<JProperty> attributeChildren()
         {
-            return position.Children.Where(c => isAttribute(c) && !c.IsNullValueProperty());
+            return position.Children.Where(c => isAttribute(c));
         }
 
         private Lazy<List<Tuple<string,string>>> _namespaces = new Lazy<List<Tuple<string,string>>>( () =>

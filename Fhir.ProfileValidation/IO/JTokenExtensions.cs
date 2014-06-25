@@ -29,6 +29,8 @@ namespace Fhir.Profiling.IO
                 if (name == null || name.Type != JTokenType.String)
                     throw new FormatException("Found 'resourceType' property, but it is not a primitive string");
 
+                // Since the resourceType has now been used to generate a new complex parent,
+                // don't include this prop anymore in its children
                 var children = root.Properties().Where(prop => prop.Name != RESOURCE_TYPE_PROP_NAME);
 
                 return new JProperty(name.ToString(), new JObject(children));
@@ -39,24 +41,28 @@ namespace Fhir.Profiling.IO
    
         public static string ElementText(this JProperty prop)
         {
+            // The value for a "primitive" property needs to be converted to Xml syntax
             if (prop.IsValueProperty())
             {
                 var primitive = (JValue)prop.Value;
 
                 // We accept four primitive json types, convert them to the correct xml string representations
-                if (primitive.Type == JTokenType.Integer)
-                    return XmlConvert.ToString((Int64)primitive.Value);
-                else if (primitive.Type == JTokenType.Float)
-                    return XmlConvert.ToString((Decimal)primitive.Value);
-                else if (primitive.Type == JTokenType.Boolean)
-                    return XmlConvert.ToString((bool)primitive.Value);
-                else if (primitive.Type == JTokenType.String)
-                    return (string)primitive.Value;
-                else if (primitive.Type == JTokenType.Null)
-                    return "(null)";
-                else
-                    throw new FormatException("Only integer, float, boolean and string primitives are allowed in FHIR Json");
+                switch (primitive.Type)
+                {
+                    case JTokenType.Integer:
+                        return XmlConvert.ToString((Int64)primitive.Value);
+                    case JTokenType.Float:
+                        return XmlConvert.ToString((Decimal)primitive.Value);
+                    case JTokenType.Boolean:
+                        return XmlConvert.ToString((bool)primitive.Value);
+                    case JTokenType.String:
+                        return (string)primitive.Value;
+                    default:
+                        throw new FormatException("Only integer, float, boolean and string primitives are allowed in FHIR Json");
+                }
             }
+
+            // The value for a complex property is simply all the text of its children appended
             else if (prop.Value is JObject)
             {
                 var result = new StringBuilder();
@@ -66,6 +72,8 @@ namespace Fhir.Profiling.IO
 
                 return result.ToString();
             }
+            
+            // We only handle primitive & complex, other nodes are expanded by the ElementChildren() function
             else
                 throw new InvalidOperationException("Don't know how to get text from a JToken of type " + prop.GetType().Name);
         }
@@ -76,17 +84,19 @@ namespace Fhir.Profiling.IO
             return prop.Name == PRIMITIVE_PROP_NAME;
         }
 
-        public static bool IsNullValueProperty(this JProperty prop)
-        {
-            return IsValueProperty(prop) && prop.Value.Type == JTokenType.Null;
-        }
+        //public static bool IsNullValueProperty(this JProperty prop)
+        //{
+        //    return IsValueProperty(prop) && prop.Value.Type == JTokenType.Null;
+        //}
 
         public static JValue PrimitivePropertyValue(this JProperty token)
         {
             if (token.Value is JObject)
             {
                 var obj = (JObject)token.Value;
-                var prim = obj.Properties().Single(p => p.Name == PRIMITIVE_PROP_NAME);
+                var prim = obj.Properties().SingleOrDefault(p => p.Name == PRIMITIVE_PROP_NAME);
+                if (prim == null) return null;
+
                 if (prim.IsValueProperty())
                 {
                     return (JValue)prim.Value;
@@ -96,165 +106,196 @@ namespace Fhir.Profiling.IO
             throw new ArgumentException("Property is not a JObject representing a primitive value", "token");
         }
 
+
         public static IEnumerable<JProperty> ElementChildren(this JProperty prop)
         {
             // At the leaves of the model, we'll find primitive properties named "(value)". They have no children.
             if (prop.IsValueProperty()) yield break;    
 
-            // Otherwise, property MUST be a complex object, since we translate primitives
-            // to objects with a value property + extensions + id, and thus, this function may never
-            // be called with anything else
+            // Otherwise, property MUST be a complex JObject, since we translate primitives
+            // to JObjects with a value property + extensions + id, and expand JArray to repeating JProperties,
+            // thus, this function may never be called with anything else
             var parent = prop.Value as JObject;
             if(parent == null) throw new InvalidOperationException("ElementChildren expects a property that's either a JValue named '(value)' or a JObject");
 
-            // Special case. If we have a complex object with a 'resourceType' property, this is represented as a complex with
-            // a single member, that has the name of the resourceType
+            // Special case: If we have a complex object with a 'resourceType' property, this is represented as a complex JObject with
+            // a single member named after the name of the resourceType
             if (parent[RESOURCE_TYPE_PROP_NAME] != null)
             {
                 yield return AsResourceRoot(parent);
-                yield break;        // that's all
+                yield break;        // that's all, just a single child
             }
 
-            // Expand the list once, since we need to scan it anyway, and need to rescan it in some cases
+            // Before we go to work with the children of the JObject, expand the child list once, 
+            // since we need to scan it anyway, and need to rescan it in some cases
             var children = parent.Properties().ToList();
 
             foreach(var child in children)
             {
-                var name = child.Name;
+                // Note: children can be "normal" properties or "appendix" properties (member with "_" prefix)
 
-                if (name.StartsWith("_")) continue;     // Skip, appendix members will be included with their non-"_" part
-                //if (name == RESOURCE_TYPE_PROP_NAME) continue;      // Skip, has been used as the root name
+                // Normal case A: if this is a primitive value property, don't expand it again, just return it
+                if (child.IsValueProperty()) yield return child;
 
-                if (child.Value is JValue)
-                {
-                    // Special case, if this is a primitive value property, don't expand it again, just add it as a child
-                    // A primitive value property is a child that was a Json primitive and got turned into a complex type with
-                    // a value member (see else)
-                    if (child.IsValueProperty())
-                        yield return child;
-                    else
-                    {
-                        // If the child is a primitive convert it to an JObject with, a single '(value)' member,
-                        // combined with -if present- an appendix member, prefixed by "_"
+                // Normal case B: a complex non-"appendix" JObject child. it needs no additional processing
+                else if (child.Value is JObject && child.Name[0] != '_') yield return child;
 
-                        // Look for the "appendix" child with the same name
-                        var appendix = children.SingleOrDefault(p => p.Name == "_" + name);
-                        JObject appendixElement = null;
-
-                        // The special "appendix" child *must* be complex...
-                        if (appendix != null)
-                        {
-                            appendixElement = appendix.Value as JObject;
-                            if (appendixElement == null)
-                                throw new FormatException(String.Format("Found appendix property {0}, but it is not a complex value.", appendix.Name));
-                        }
-
-                        // Combine both the primitive and the appendix into a single property
-                        yield return new JProperty(name, combinePrimitiveWithAppendix(((JValue)child.Value), appendixElement));
-                    }
-                }
-
-                else if (child.Value is JObject)
-                {
-                    yield return child;     // Do nothing, normal child
-                }
-
-                else if (isPrimitiveArray(child.Value))
-                {
-                    // If the child is an array of primitives, convert it to multiple JObjects with, a single '(value)' member,
-                    // combined with -if present- an appendix member, prefixed by "_"
-
-                    // Look for the "appendix" child with the same name
-                    var appendix = children.SingleOrDefault(p => p.Name == "_" + name);
-                    List<JObject> appendixElements = appendix != null ? convertAppendixArray(appendix) : null;
-
-                    var elements = ((JArray)child.Value).Children().ToList();
-
-                    // Arrays should be a 1-to-1 mapping, so the same size
-                    if (appendixElements != null && elements.Count != appendixElements.Count)
-                        throw new FormatException(String.Format("The appendix array for property {0} does have the same number of elements", child.Name));
-
-                    for (var index = 0; index < elements.Count; index++)
-                    {
-                        var primitive = (JValue)elements[index];
-                        // Combine both the primitive and the appendix into a single property
-                        if (appendixElements == null)
-                            yield return new JProperty(name, combinePrimitiveWithAppendix(primitive, null));
-                        else
-                            yield return new JProperty(name, combinePrimitiveWithAppendix(primitive, appendixElements[index]));
-                    }
-                }
-
-                // If the property is an Array, return it as sibling properties
-                else if (child.Value is JArray)
-                {
-                    foreach (var elem in child.Value.Children())
-                    {
-                        var sibling = new JProperty(name, elem);
-                        yield return sibling;
-                    }
-                }
+                // Normal case C: an array of JObject non-"appendix" children. it needs to be split up into one property per child
+                else if (isComplexArray(child.Value) && child.Name[0] != '_')
+                    foreach (var elem in child.Value.Children()) yield return new JProperty(child.Name, elem);
 
                 else
-                    throw new FormatException(String.Format("Encountered a property {0} of unexpected type {1} in JObject", name, child.Value.GetType().Name));
+                {
+                    // What's left are primitive properties (or arrays or primitive properties) which may be absent
+                    // and may have an appendix
+                    var name = baseChildName(child.Name);
+
+                    // If this is an "appendix" child, check wether it has a corresponding normal child.
+                    // Since we base our processing on the normal childs, we can skip the appendix to avoid doing work twice and duplicate the child.
+                    // This will also skip work on appendix childs of complex properties (which are not allowed anyway. but you won't get an error either.)
+                    if (child.Name[0] == '_' && children.Any(p => p.Name == name)) continue;
+
+                    JProperty primitiveProp = null;     // property contains a JObject or a JArray (of JObjects)
+
+                    if (child.Name == name)     // the base property exists
+                    {
+                        // lookup its appendix (if any)
+                        var appendixProp = children.SingleOrDefault(p => p.Name == "_" + name);
+
+                        // Make sure any (array of) "primitive" property gets turned into a complex one
+                        primitiveProp = expandChild(child);
+
+                        if (appendixProp != null) primitiveProp = mergeAppendix(primitiveProp, appendixProp);
+                    }
+                    else   // This is a sole appendix property (so, only the "_" member exists). 
+                    {
+                        primitiveProp = mergeAppendix(null, child);
+                    }
+
+                    if (primitiveProp.Value is JObject)
+                        yield return primitiveProp;
+                    else if (primitiveProp.Value is JArray)
+                    {
+                        foreach (var elem in primitiveProp.Value.Children())
+                            yield return new JProperty(name, elem);
+                    }
+                    else
+                        throw new InvalidOperationException(String.Format("Internal logic error. Did not expect property {0} of type {1}", primitiveProp.Name, primitiveProp.Type));
+                }
             }
         }
 
-
-        private static JObject combinePrimitiveWithAppendix(JValue primitive, JObject appendix)
+        private static string baseChildName(string p)
         {
-            var primitiveProp = new JProperty(PRIMITIVE_PROP_NAME, primitive);
+            return p[0] == '_' ? p.Substring(1) : p;
+        }
 
-            if (appendix == null)
-                return new JObject(primitiveProp);
+
+        private static JProperty mergeAppendix(JProperty prop, JProperty appendix)
+        {
+            // If prop is not null, it's either a JObject or a JArray of JObject (guaranteed by the caller)
+            if(appendix == null) throw new ArgumentNullException("appendix", "Need an appendix to be able to expand property");
+
+            bool isArray = (prop != null && prop.Value is JArray) || appendix.Value is JArray;
+
+            if (!isArray)
+            {
+                var appendixContents = appendix.Value as JObject;
+                if(appendixContents == null)
+                    throw new FormatException(String.Format("Appendix property {0} is not a complex value.", appendix.Name));
+
+                // There's no corresponding property for the appendix, just return the appendix
+                if (prop == null) return new JProperty(baseChildName(appendix.Name), appendix.Value);
+                              
+                // Combine both the primitive and the appendix into a single property
+                var value = (JObject)prop.Value;
+                value.Add(appendixContents.Properties());
+                return prop;
+            }
             else
             {
-                return new JObject(primitiveProp, appendix.Properties());
+                assertComplexArray(appendix.Name, appendix.Value);   // appendix props are always complex
+
+                // If there is no corresponding property for the appendix, just return the appendix contents
+                if (prop == null) return new JProperty(baseChildName(appendix.Name), appendix.Value);
+
+                // Expand both enumerables, since we browse them multiple times anyway
+                var elements = ((JArray)prop.Value).Children().ToList();
+                var appendixElements =((JArray)appendix.Value).Children().ToList();
+
+                // property + appendix Arrays should be a 1-to-1 mapping, so the same size
+                if (elements.Count != appendixElements.Count)
+                    throw new FormatException(String.Format("The appendix array for property {0} does have the same number of elements", prop.Name));
+
+                // Merge the appendices properties into the primitive's
+                for (var index = 0; index < elements.Count; index++)
+                {
+                    var primitiveElem = (JObject)elements[index];
+                    
+                    if( appendixElements[index] is JObject )
+                        primitiveElem.Add( ((JObject)appendixElements[index]).Properties());
+                }
+
+                return prop;
             }
         }
 
 
-        private static List<JObject> convertAppendixArray(JProperty prop)
+        private static JProperty expandChild(JProperty child)
         {
-            var appendixArray = prop.Value as JArray;
-            if (appendixArray == null)
-                throw new FormatException(String.Format("Found appendix property {0}, but it is not an array", prop.Name));
+            var arr = child.Value as JArray;
 
-            var result = new List<JObject>();
-
-            foreach (var element in appendixArray.Children())
-            {
-                if (element is JObject)
-                    result.Add((JObject)element);
-                else if (element is JValue && element.Type == JTokenType.Null)
-                    result.Add((JObject)null);
-                else
-                    throw new FormatException(String.Format("Found appendix property {0}, but it contains an element that is not complex or null", prop.Name));
-            }
-
-            return result;
-        }
-
-        private static bool isPrimitiveArray(JToken value)
-        {
-            var arr = value as JArray;
             if (arr != null)
             {
-                return arr.Children().All(c => c is JValue);
-            }
+                var result = new JArray();
+                foreach (var element in arr.Children())
+                {
+                    if (element.Type == JTokenType.Null)
+                        result.Add(new JObject());
+                    else if (element is JValue)
+                        result.Add(new JObject(new JProperty(PRIMITIVE_PROP_NAME, element)));
+                    else
+                        throw new FormatException(String.Format("Array for property {0} contains an element that is neither primitive nor null", child.Name));
+                }
 
-            return false;
+                return new JProperty(child.Name, result);
+            }
+            else if (child.Value is JValue)
+            {
+                return new JProperty(child.Name, new JObject(new JProperty(PRIMITIVE_PROP_NAME, child.Value)));
+            }
+            else
+                throw new FormatException(String.Format("Property {0} should be a primitive", child.Name));
         }
+
+        private static void assertPrimitiveArray(string propName, JToken value)
+        {
+            var arr = value as JArray;
+
+            if (arr == null)
+                throw new FormatException(String.Format("Property {0} has to be an array", propName));
+
+            if(!arr.Children().All(c => c is JValue || c.Type == JTokenType.Null))
+                throw new FormatException(String.Format("Property {0} contains an element that is neither primitive nor null", propName));
+        }
+
+        private static void assertComplexArray(string propName, JToken value)
+        {
+            var arr = value as JArray;
+
+            if(arr == null)
+                throw new FormatException(String.Format("Property {0} has to be an array", propName));
+
+            if(!arr.Children().All(c => c is JObject || c.Type == JTokenType.Null))
+                throw new FormatException(String.Format("Property {0} contains an element that is neither complex nor null", propName));
+        }
+
 
         private static bool isComplexArray(JToken value)
         {
             var arr = value as JArray;
-            if (arr != null)
-            {
-                return arr.Children().All(c => c is JObject);
-            }
 
-            return false;
+            return arr != null && arr.Children().All(c => c is JObject || c.Type == JTokenType.Null);
         }
 
     }

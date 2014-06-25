@@ -25,7 +25,7 @@ namespace Fhir.Profiling.Tests
             Assert.AreEqual(String.Empty, nav.LocalName);
             Assert.AreEqual(String.Empty, nav.NamespaceURI);
             Assert.AreEqual(String.Empty, nav.Prefix);
-            Assert.IsTrue(nav.Value.StartsWith("MRN2001-05-06Acme Healthcareusualurn:oid:1.2.36.146.595.217.0.112345Organization/1PeterJamesofficialChalmersJimusualhttp://hl7.org/fhir/example-do-not-use#Patient.avatar#pic1Duck imageurn:example-do-not-use:pi3.141592653589793http://hl7.org/fhir/v3/AdministrativeGenderMMale1974-12http://hl7.org/fhir/example-do-not-use#DateTime.calendargregoriantruehome534 Erewhon StPleasantVilleVic3999ASKUhttp://hl7.org/fhir/Profileiso-21090#nullFlavor3generated<div xmlns="));
+            Assert.IsTrue(nav.Value.StartsWith("MRN2001-05-06Acme Healthcareusualurn:oid:1.2.36.146.595.217.0.112345Organization/1http://hl7.org/fhir/example-do-not-use#recordStatusarchivedPeterJamesofficialChalmersJimusualhttp://hl7.org/fhir/example-do-not-use#Patient.avatar#pic1Duck imageurn:example-do-not-use:pi3.141592653589793http://hl7.org/fhir/v3/AdministrativeGenderMMale1974-12http://hl7.org/fhir/example-do-not-use#DateTime.calendargregoriantruehome534 Erewhon StPleasantVilleVic3999ASKUhttp://hl7.org/fhir/Profileiso-21090#nullFlavor3generated<div xmlns=\"http://www.w3.org/1999/xhtml\">"));
         }
 
 
@@ -263,7 +263,9 @@ namespace Fhir.Profiling.Tests
             xslt.Transform(navCreator, xmlw);
             xmlw.Flush();
 
-            Assert.AreEqual("", sw.ToString());
+            Assert.IsTrue(sw.ToString().StartsWith("<?xml version=\"1.0\" encoding=\"utf-16\"?>" +
+                "<f:Patient xmlns:f=\"http://hl7.org/fhir\"><f:identifier><f:label value=\"MRN\" />" +
+                "<f:period><f:start value=\"2001-05-06\" /></f:period>"));
         }
 
         private static JsonXPathNavigator buildNav()
