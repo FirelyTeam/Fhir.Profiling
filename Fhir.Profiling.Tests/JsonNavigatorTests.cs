@@ -11,6 +11,9 @@ namespace Fhir.Profiling.Tests
     [TestClass]
     public class JsonNavigatorTests
     {
+        Stream xmlExample = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("Fhir.Profiling.Tests.TestPatient.xml");
+
+
         [TestMethod]
         public void TestConstruct()
         {
