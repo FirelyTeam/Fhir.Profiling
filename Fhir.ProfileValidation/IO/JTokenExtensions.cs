@@ -84,11 +84,6 @@ namespace Fhir.Profiling.IO
             return prop.Name == PRIMITIVE_PROP_NAME;
         }
 
-        //public static bool IsNullValueProperty(this JProperty prop)
-        //{
-        //    return IsValueProperty(prop) && prop.Value.Type == JTokenType.Null;
-        //}
-
         public static JValue PrimitivePropertyValue(this JProperty token)
         {
             if (token.Value is JObject)
@@ -107,6 +102,27 @@ namespace Fhir.Profiling.IO
         }
 
 
+        // Expand the children of a property given in the parameter. The property may only contain either a primitive JValue or a
+        // complex JObject, and will list its children, which are only JValues and JObjects as well (JArrays get expanded to a list
+        // of JProperties with the same name). Note that a primitive has no children (so in that case the function returns the empty
+        // set), only a JObject has.
+        //
+        // The children of a JObject are expanded as follows:
+        // * (value): p                         ->          (value) : p
+        //
+        // * name: { X }                        ->          name : { X }
+        //
+        // * name : p  (/need not be present/)  ->          name : { (value) : p, extension: {}, ... }
+        //   _name: { extension: {},... }
+        //
+        // * name : [ { X }, { Y } ]            ->          1) name : {X}  2) name : {Y}
+        //
+        // * name: ["de", null, "Vries"]        ->          1) name: { (value): "de", extension: {X} }
+        //   _name: [ { extension: {X}, ... },              2) name: { extension: {Y}, ... }
+        //            { extension: {Y}, ... },              3) name: { (value): "Vries" }
+        //            null ]
+        //
+        // Expansion reuses the existing JTokens from the original document as much as possible to avoid wasting memory
         public static IEnumerable<JProperty> ElementChildren(this JProperty prop)
         {
             // At the leaves of the model, we'll find primitive properties named "(value)". They have no children.
@@ -191,6 +207,10 @@ namespace Fhir.Profiling.IO
         }
 
 
+        // Merge a JObject property (e.g. name: { (value) : p } ) with the corresponding "appendix"
+        // (e.g. _name: { extension: {A} }). The result is a property with both combined (e.g. name: { (value) : p, extension: {A} }).
+        // Works both for single properties as well as arrays. The main property may be null, in which case the resulting
+        // merge has no (value):p property with the primitive value.
         private static JProperty mergeAppendix(JProperty prop, JProperty appendix)
         {
             // If prop is not null, it's either a JObject or a JArray of JObject (guaranteed by the caller)
@@ -241,6 +261,9 @@ namespace Fhir.Profiling.IO
         }
 
 
+        // Expand:
+        // * a JValue JProperty (name: p) to a JObject JProperty (name: { (value):p })
+        // * a JArray JProperty (name: [a,b,c]) to a JArray JProperty (name: [ { (value):a }, { (value):b }, ... ])
         private static JProperty expandChild(JProperty child)
         {
             var arr = child.Value as JArray;

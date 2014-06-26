@@ -97,7 +97,6 @@ namespace Fhir.Profiling.IO
             });
        
 
-//        private IEnumerable<Tuple<string,string>> namespaceChildren(XPathNamespaceScope scope)
         private IEnumerable<Tuple<string,string>> namespaceChildren()
         {
             //switch (scope)
@@ -503,13 +502,4 @@ namespace Fhir.Profiling.IO
             return String.Join("/", _state);
         }
     }
-
-
-    //internal static class MoveToChildExtensions
-    //{
-    //    public static bool HasIndex<T>(this IEnumerable<T> list, int index)
-    //    {
-    //        return index >= 0 && index <= list.Count();
-    //    }
-    //}
 }
