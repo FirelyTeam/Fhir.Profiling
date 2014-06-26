@@ -16,6 +16,8 @@ namespace Fhir.Profiling
     public class ProfileReader
     {
         XmlNamespaceManager ns;
+
+        List<Slicing> Slicings = new List<Slicing>();
         
         public string Value(XPathNavigator node, string xpath)
         {
@@ -34,8 +36,8 @@ namespace Fhir.Profiling
         public void ReadCardinality(Element element, XPathNavigator node)
         {
             Cardinality cardinality = new Cardinality();
-            cardinality.Min = Value(node, "f:definition/f:min/@value");
-            cardinality.Max = Value(node, "f:definition/f:max/@value");
+            cardinality.Min = OptionalValue(node, "f:definition/f:min/@value");
+            cardinality.Max = OptionalValue(node, "f:definition/f:max/@value");
             element.Cardinality = cardinality;
         }
 
@@ -102,13 +104,24 @@ namespace Fhir.Profiling
             return sliced;
         }
 
-        public void ReadSlicing(Element element, XPathNavigator node)
+        private Slicing readSlicing(Element element, XPathNavigator node)
         {
             Slicing slicing = new Slicing();
             slicing.Discriminator = new Path(Value(node, "f:slicing/f:discriminator/@value"));
-            slicing.Rule = (SlicingRules)Enum.Parse(typeof(SlicingRules), Value(node, "f:slicing/f:rules/@value"));
-            slicing.Ordered = (Value(node, "f:slicing/f:ordered/@value").ToLower() == "true");
-            element.Slicing = slicing;
+            slicing.Path = element.Path;
+            //slicing.Rule = (SlicingRules)Enum.Parse(typeof(SlicingRules), Value(node, "f:slicing/f:rules/@value"));
+            //slicing.Ordered = (Value(node, "f:slicing/f:ordered/@value").ToLower() == "true");
+            return slicing;
+        }
+
+        public void PatchSliceInfo(Element element)
+        {
+            Slicing slicing = Slicings.FirstOrDefault(s => s.Path.Equals(element.Path));
+            if (slicing != null)
+            {
+                element.Discriminator = slicing.Discriminator;
+                element.Slice = slicing.Count++;
+            }
         }
 
         public void ReadElementDefinition(Element element, XPathNavigator node)
@@ -126,12 +139,11 @@ namespace Fhir.Profiling
             Element element = new Element();
             if (IsSliced(node))
             {
-                ReadSlicing(element, node);
+                Slicing s = readSlicing(element, node);
+                Slicings.Add(s);
             }
-            else 
-            {
-                ReadElementDefinition(element, node);
-            }
+            ReadElementDefinition(element, node);
+            
             return element;
         }
 
@@ -149,7 +161,6 @@ namespace Fhir.Profiling
             structure.Name = node.SelectSingleNode("f:type/@value", ns).Value;
             structure.Namespace = Namespace.Fhir;
             ReadStructureElements(structure, node.Select("f:element", ns));
-            structure.LinkElements();
             return structure;
         }
 
@@ -202,7 +213,16 @@ namespace Fhir.Profiling
                 if (set != null) valuesets.Add(set);
             }
             return valuesets;
-        }
+        }   
+
+    }
+
+    // This class is only for keeping track of slicings while reading a profile into structure.
+    internal class Slicing
+    {
+        internal int Count = 0;
+        internal Path Path;
+        internal Path Discriminator {get; set; }
     }
 
 }

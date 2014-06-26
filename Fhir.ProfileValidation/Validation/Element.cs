@@ -34,10 +34,20 @@ namespace Fhir.Profiling
         public string ElementRefPath { get; set; }
         public Element ElementRef { get; set; }
         public List<Element> Children = new List<Element>();
-        public Slicing Slicing { get; set; }
+
+        public Cardinality Cardinality;
+        public List<Constraint> Constraints = new List<Constraint>();
+        public string BindingUri;
+        public ValueSet Binding;
+        public string Namespace { get; set; } // namespace key (f=fhir, xhtml, etc.)
+
+        //public Slicing Slicing { get; set; }
+        public int Slice { get; set; }
+        public Path Discriminator { get; set; }
+
         public bool Multi
         {
-            get 
+            get
             {
                 return Path.Segments.Last().Multi;
             }
@@ -49,7 +59,8 @@ namespace Fhir.Profiling
                 return Path.Count == 1;
             }
         }
-        public bool Sliced { get { return Slicing != null; } }
+        public bool Sliced { get { return Discriminator == null; } }
+    
         public string NodeMatch
         {
             get
@@ -92,14 +103,12 @@ namespace Fhir.Profiling
                 return Children.Count > 0;
             }
         }
-        public Cardinality Cardinality;
-        public List<Constraint> Constraints = new List<Constraint>();
-        public string BindingUri;
-        public ValueSet Binding;
-        public string Namespace { get; set; } // namespace key (f=fhir, xhtml, etc.)
+
         public override string ToString()
         {
             return string.Format("{0} ({1})", Path.ToString(), Cardinality);
         }
     }
+
+    
 }

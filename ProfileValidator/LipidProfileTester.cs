@@ -13,7 +13,7 @@ namespace ProfileValidation
     {
         protected override Profile LoadProfile()
         {
-            Profile profile = new Profile();
+            ProfileBuilder builder = new ProfileBuilder();
 
             //profile.Add(ProfileFactory.MetaTypesProfile());
             //profile.Add(ProfileFactory.DataTypesProfile());
@@ -21,10 +21,9 @@ namespace ProfileValidation
             //profile.LoadXMLValueSets("Data\\valuesets.xml");
             //profile.LoadXmlFile("Data\\type-HumanName.profile.xml");
             //profile.LoadXmlFile("Data\\type-Identifier.profile.xml")
-
             
-            profile.LoadXmlFile("Data\\profile.profile.xml");
-            return profile;
+            builder.LoadXmlFile("Data\\profile.profile.xml");
+            return builder.ToProfile();
         }
 
         protected override IEnumerable<Feed.Entry> Entries()

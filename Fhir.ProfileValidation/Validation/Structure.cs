@@ -27,56 +27,8 @@ namespace Fhir.Profiling
                 return Elements.FirstOrDefault(e => e.Path.Count == 1);
             }
         }
-        public IEnumerable<Element> SlicingElements
-        {
-            get
-            {
-                return Elements.Where(e => e.Slicing != null);
-            }
-        }
-        public Element FindParent(Element element)
-        {
-            Path p = element.Path.Parent();
-            Element parent = Elements.Find(e => e.Path.Equals(p));
-            return parent;
-        }
-
-        public bool TryLinkToSlice(Element element)
-        {
-            Path p = element.Path;
-            Element slicer = SlicingElements.FirstOrDefault(e => e.Path.Equals(p));
-            if (slicer != null)
-            {
-                slicer.Slicing.Elements.Add(element);
-                return true;
-            }
-            return false;
-        }
-
-        public bool TryLinkToParent(Element element)
-        {
-            Element parent = FindParent(element);
-            if (parent != null)
-            {
-                parent.Children.Add(element);
-                return true;
-            }
-            return false;
-        }
         
-        public void LinkToElement(Element e)
-        {
-            TryLinkToSlice(e);
-            TryLinkToParent(e);
-        }
-
-        public void LinkElements()
-        {
-            foreach (Element e in Elements)
-            {
-                LinkToElement(e);
-            }
-        }
+       
         public override string ToString()
         {
             return string.Format("{0} ({1} elements)", Name, Elements.Count);

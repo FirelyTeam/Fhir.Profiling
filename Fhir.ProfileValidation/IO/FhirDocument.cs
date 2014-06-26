@@ -25,10 +25,10 @@ namespace Fhir.IO
             return reader.Read(document);
         }
 
-        public static void LoadXmlFile(this Profile profile, string filename)
+        public static void LoadXmlFile(this ProfileBuilder builder, string filename)
         {
             List<Structure> structures = LoadXmlFile(filename);
-            profile.Add(structures);
+            builder.Add(structures);
         }
 
         public static Feed LoadXMLFeed(string filename)
@@ -62,21 +62,14 @@ namespace Fhir.IO
             return entry;
         }
 
-        public static Profile LoadXMLValueSets(string filename)
+       
+        public static void LoadXMLValueSets(this ProfileBuilder builder, string filename)
         {
             XmlDocument document = new XmlDocument();
             document.Load(filename);
             ProfileReader reader = new ProfileReader();
             List<ValueSet> valuesets = reader.ReadValueSets(document);
-            Profile profile = new Profile();
-            profile.Add(valuesets);
-            return profile;
-        }
-
-        public static void LoadXMLValueSets(this Profile profile, string filename)
-        {
-            Profile p = LoadXMLValueSets(filename);
-            profile.Add(p);
+            builder.Add(valuesets);
         }
 
     }

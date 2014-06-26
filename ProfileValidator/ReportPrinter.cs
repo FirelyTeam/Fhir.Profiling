@@ -48,8 +48,16 @@ namespace Fhir.Profiling
             WriteLine(OutcomeToString(outcome));
 
             if (outcome.Vector.Element != null)
-            if (outcome.Vector.Element.Path != null)
-                WriteLine("<span>{0}</span>\n", string.Join(".", outcome.Vector.Element.Path));
+                if (outcome.Vector.Element.Path != null)
+                {
+                    string type = 
+                        outcome.Vector.Element.TypeRefs.Count > 0 ?
+                        " ("+string.Join(".", outcome.Vector.Element.TypeRefs)+")" : null;
+                    
+                    WriteLine("<span>{0}{1}</span>\n",
+                        string.Join(".", outcome.Vector.Element.Path),
+                        type);
+                }
         }
 
         public string OutcomeToString(Outcome outcome)

@@ -187,7 +187,7 @@ namespace Fhir.Profiling
 
         public override string ToString()
         {
-            return string.Format("{0} × {1}", Element.ToString(), Node.Name);
+            return string.Format("{0}:{1} × {2}", Structure.Name, Element, NodePath());
         }
     }
 

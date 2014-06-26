@@ -52,6 +52,7 @@
     <Compile Include="Validation\ConstraintCompiler.cs" />
     <Compile Include="Validation\Element.cs" />
     <Compile Include="Validation\Path.cs" />
+    <Compile Include="Validation\ProfileBuilder.cs" />
     <Compile Include="Validation\ProfileValidator.cs" />
     <Compile Include="Validation\Structure.cs" />
     <Compile Include="Validation\TypeRef.cs" />

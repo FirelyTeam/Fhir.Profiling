@@ -14,12 +14,14 @@ namespace Fhir.Profiling
         {
         }
 
-        public static void AddExtensionElement(Structure structure)
+        public static void AddExtensionElement(Structure structure, Element parent = null)
         {
-            string path = string.Format("{0}.extension", structure.Root.Name); 
+            parent = parent  ?? structure.Root;
+            string path = string.Format("{0}.extension", parent.Path); 
             Element element = new Element();
             element.Path = new Path(path);
             element.Name = "extension";
+            element.Cardinality = new Cardinality { Min = "0", Max = "*" };
             element.TypeRefs.Add(new TypeRef { Code = "Extension" });
             structure.Elements.Add(element);
         }
@@ -32,9 +34,10 @@ namespace Fhir.Profiling
             Element element = new Element();
             element.Path = new Path(name);
             element.Name = name;
+            element.Cardinality = new Cardinality { Min = "1", Max = "1" };
             structure.Elements.Add(element);
 
-            AddExtensionElement(structure);
+            AddExtensionElement(structure, element);
             structure.IsPrimitive = true;
             structure.ValuePattern = pattern;
             return structure;

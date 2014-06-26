@@ -76,6 +76,10 @@
     </element>
     <element>
       <path value="Quantity.value.extension" />
+      <definition>
+        <min value="1" />
+        <max value="2" />
+      </definition>
       <slicing>
         <discriminator value="Quantity.value.extension.url" />
         <ordered value="true" />
@@ -86,6 +90,8 @@
       <path value="Quantity.value.extension" />
       <name value="MyExtension" />
       <definition>
+        <min value="1" />
+        <max value="1" />
         <type>
           <code value="Extension" />
           <profile value="#_c4773f9b30a545baad9015cd171eb32c" />
@@ -96,6 +102,8 @@
       <path value="Quantity.value.extension" />
       <name value="MyExtension" />
       <definition>
+        <min value="1" />
+        <max value="1" />
         <type>
           <code value="Extension" />
           <profile value="#_b95c58a28a114d7ca3e1eb4d2d8fd02e" />
