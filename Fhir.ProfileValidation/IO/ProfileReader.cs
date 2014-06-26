@@ -47,11 +47,6 @@ namespace Fhir.Profiling
 
             element.Path = new Path(s);
             element.Name = element.Path.ElementName;
-            element.Namespace = Namespace.Fhir;
-
-            // todo: HACK! The standard doesn't provide a namespace in the profile for div
-            if (element.Name == "div")
-                element.Namespace = Namespace.XHtml;
         }
 
         public void ReadReference(Element element, XPathNavigator node)
@@ -94,6 +89,7 @@ namespace Fhir.Profiling
                 // Maar nu moeten we er maar even omheen werken.
                 constraint.Name = (xName != null) ? xName.Value : "Constraint"+(++constraintnr).ToString();
                 constraint.XPath = nav.SelectSingleNode("f:xpath/@value", ns).Value;
+                constraint.HumanReadable = OptionalValue(nav, "f:human/@value");
                 element.Constraints.Add(constraint);
             }   
         }

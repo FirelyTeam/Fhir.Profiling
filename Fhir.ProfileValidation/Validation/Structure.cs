@@ -16,10 +16,6 @@ namespace Fhir.Profiling
     {
         public string Name { get; set; }
         public List<Element> Elements = new List<Element>();
-        public Structure()
-        {
-            IsPrimitive = false;
-        }
         public Element Root
         {
             get
@@ -33,8 +29,6 @@ namespace Fhir.Profiling
         {
             return string.Format("{0} ({1} elements)", Name, Elements.Count);
         }
-        public Boolean IsPrimitive { get; set; }
-        public string ValuePattern { get; set; }
         public string Namespace { get; set; }
     }
 }

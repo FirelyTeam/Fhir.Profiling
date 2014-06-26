@@ -37,6 +37,9 @@ namespace Fhir.Profiling
 
         public Cardinality Cardinality;
         public List<Constraint> Constraints = new List<Constraint>();
+        public bool IsPrimitive { get; set; }
+        public bool IsAttribute { get; set; }
+        public string PrimitivePattern {get; set;} // RegExPattern to validate a primite against (only in case of IsPrimitive)
         public string BindingUri;
         public ValueSet Binding;
         public string Namespace { get; set; } // namespace key (f=fhir, xhtml, etc.)

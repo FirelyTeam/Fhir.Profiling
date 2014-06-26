@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 
 namespace Fhir.Profiling
 {
+
     public class ResourceValidator
     {
         private Profile Profile = new Profile();
@@ -66,8 +67,8 @@ namespace Fhir.Profiling
             else 
             {
                 report.Add("Cardinality", Kind.Invalid, vector, 
-                    "Element [{0}] occurrence ({3}) under [{1}] is out of range ({2})", 
-                    vector.Element.Name, vector.NodePath(), vector.Element.Cardinality, count);
+                    "The occurence {0} of node [{1}] under [{2}] is out of range ({3})", 
+                    count, vector.NodePath(), vector.Element.Name, vector.Element.Cardinality);
             }
         }
 
@@ -81,7 +82,7 @@ namespace Fhir.Profiling
                     if (valid)
                         report.Add("Constraint", Kind.Valid, vector, "Node [{0}] conforms to constraint [{1}]", vector.Node.Name, constraint.Name);
                     else
-                        report.Add("Constraint", Kind.Invalid, vector, "Node [{0}] does not conform to constraint [{1}]: {2} ", vector.Node.Name, constraint.Name, constraint.XPath);
+                        report.Add("Constraint", Kind.Invalid, vector, "Node [{0}] does not conform to constraint [{1}]: {2} ", vector.Node.Name, constraint.Name, constraint.HumanReadable);
                 }
                 catch (XPathException e)
                 {
@@ -160,7 +161,6 @@ namespace Fhir.Profiling
         {
              
         }
-
         public void ValidateElement(Vector vector)
         {
             report.Start("element", vector);
@@ -178,19 +178,22 @@ namespace Fhir.Profiling
 
         public void ValidatePrimitive(Vector vector)
         {
-            if (!vector.Structure.IsPrimitive) return;
+            // fail. validation of primites should be done at the root element
+            // this should be the root element of a structure
+            if (!vector.Element.IsPrimitive)
+                return;
 
             try
             {
-                string value = vector.GetValue("./@value");
-                string pattern = vector.Structure.ValuePattern;
+                string value = vector.GetContent();
+                string pattern = vector.Element.PrimitivePattern;
                 if (Regex.IsMatch(value, pattern))
-                {
-                    report.Add("Primitive", Kind.Valid, vector, "The value format ({0}) of primitive [{1}] is valid.", vector.Element.Name, vector.Node.Name);
+                {   
+                    report.Add("Primitive", Kind.Valid, vector, "The value format ({0}) of primitive [{1}] is valid. ", vector.Element.Name, vector.Node.Name);
                 }
                 else
                 {
-                    report.Add("Primitive", Kind.Invalid, vector, "The value format ({0}) of primitive [{1}] not valid.", vector.Element.Name, vector.Node.Name);
+                    report.Add("Primitive", Kind.Invalid, vector, "The value format ({0}) of primitive [{1}] not valid: '{2}'", vector.Element.Name, vector.Node.Name, value);
                 }
             }
             catch

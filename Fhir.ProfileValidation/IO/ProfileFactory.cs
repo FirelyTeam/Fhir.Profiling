@@ -34,20 +34,18 @@ namespace Fhir.Profiling
             Element element = new Element();
             element.Path = new Path(name);
             element.Name = name;
+            element.IsPrimitive = true;
+            element.PrimitivePattern = pattern;
             element.Cardinality = new Cardinality { Min = "1", Max = "1" };
             structure.Elements.Add(element);
 
             AddExtensionElement(structure, element);
-            structure.IsPrimitive = true;
-            structure.ValuePattern = pattern;
             return structure;
         }
 
         public static Structure XhtmlStructure()
         {
-            Structure structure = new Structure();
-            structure.Name = "xhtml";
-            structure.IsPrimitive = true;
+            Structure structure = Primitive("xhtml", null);
             structure.Namespace = Namespace.XHtml;
             return structure;
         }

@@ -12,12 +12,12 @@ namespace Fhir.Profiling
 
         public void Add(IEnumerable<ValueSet> valuesets)
         {
-            profile.ValueSets.AddRange(valuesets);
+            profile.Add(valuesets);
         }
 
         public void Add(List<Structure> structures)
         {
-            profile.Structures.AddRange(structures);
+            profile.Add(structures);
         }
 
         private void _linkBindings()
@@ -52,21 +52,14 @@ namespace Fhir.Profiling
                 foreach (Element element in structure.Elements)
                 {
                     if (element.ElementRef == null && element.ElementRefPath != null)
-                        element.ElementRef = profile.GetElementByName(structure, element.ElementRefPath);
+                        element.ElementRef = profile.GetElementByPath(structure, element.ElementRefPath);
                 }
             }
         }
 
-        public Element FindParent(Structure structure, Element element)
+        private bool _tryLinkToParent(Structure structure, Element element)
         {
-            Path p = element.Path.Parent();
-            Element parent = structure.Elements.Find(e => e.Path.Equals(p));
-            return parent;
-        }
-
-        public bool TryLinkToParent(Structure structure, Element element)
-        {
-            Element parent = FindParent(structure, element);
+            Element parent = profile.ParentOf(structure, element);
             if (parent != null)
             {
                 parent.Children.Add(element);
@@ -79,7 +72,7 @@ namespace Fhir.Profiling
         {
             foreach (Element e in profile.Elements)
             {
-                TryLinkToParent(structure, e);
+                _tryLinkToParent(structure, e);
             }
         }
 
@@ -91,6 +84,13 @@ namespace Fhir.Profiling
             }
         }
 
+        public void _addNameSpaces()
+        {
+            foreach (Element element in profile.Elements.Where(e => e.Namespace == null))
+            {
+                element.Namespace = Namespace.Fhir;
+            }
+        }
         private void _compileConstraints()
         {
             foreach (Constraint c in profile.Constraints)
@@ -103,9 +103,11 @@ namespace Fhir.Profiling
         /// <summary>
         /// Make the profile complete and usable by linking all internal structures and perform precompilation
         /// </summary>
-        private void surrect()
+        private void _surrect()
         {
             _linkBindings();
+            _linkElements();
+            _addNameSpaces();
             _linkStructures();
             _linkElementRefs();
             _compileConstraints();
@@ -113,7 +115,7 @@ namespace Fhir.Profiling
 
         public Profile ToProfile()
         {
-            surrect();
+            _surrect();
             return profile;
 
         }

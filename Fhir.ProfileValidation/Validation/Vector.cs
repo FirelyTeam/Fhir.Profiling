@@ -79,7 +79,8 @@ namespace Fhir.Profiling
 
         public bool Evaluate(Constraint constraint)
         {
-            return (bool)Node.Evaluate(constraint.XPath, NSM);
+            return (bool)Node.Evaluate(constraint.Expression);
+            //return (bool)Node.Evaluate(constraint.XPath, NSM);
         }
         
         public bool Exists(string xpath)
@@ -98,6 +99,20 @@ namespace Fhir.Profiling
         public string GetValue(string xpath)
         {
             return Node.SelectSingleNode(xpath, NSM).ToString();
+        }
+
+        public string GetContent()
+        {
+            if (Element.IsAttribute)
+            {
+                string attr = Element.Name;
+                return this.GetValue(attr);
+            }
+            else
+            {
+                return this.GetValue("./@value");
+            }
+
         }
         
         public string NodePath()

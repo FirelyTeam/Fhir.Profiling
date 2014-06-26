@@ -35,6 +35,7 @@ namespace Fhir.Profiling
                 "Element [{0}] does not define it's cardinality", element.Path);
 
         }
+
         public void ValidateConstraint(Element element, Constraint constraint)
         {
             if (constraint.IsValid)
@@ -98,8 +99,18 @@ namespace Fhir.Profiling
             }
         }
 
+        public void ValidateAttribute(Element element)
+        {
+            if (element.IsAttribute)
+            {
+                if (element.Children != null)
+                    report.Add("Attribute", Kind.Invalid, "Element [{0}] is has an attribute representation and can not have children", element);
+            }
+        }
+
         public void ValidateElement(Element element)
         {
+            ValidateAttribute(element);
             ValidateCardinality(element);
             ValidateConstraints(element);
             ValidateTypeRefs(element);
