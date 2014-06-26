@@ -45,5 +45,10 @@ namespace Fhir.Profiling
                 constraint.IsValid = false;
             }
         }
+
+        public static object Eval(string xpath)
+        {
+            return navigator.Evaluate(xpath, context);
+        }
     }
 }
