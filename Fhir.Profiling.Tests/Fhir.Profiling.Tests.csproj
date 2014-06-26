@@ -55,6 +55,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="XsltContextTests.cs" />
     <Compile Include="JTokenExtensionsTests.cs" />
     <Compile Include="JsonNavigatorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

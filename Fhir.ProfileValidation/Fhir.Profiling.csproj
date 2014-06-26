@@ -67,6 +67,7 @@
     <Compile Include="Validation\Report.cs" />
     <Compile Include="Validation\Profile.cs" />
     <Compile Include="Validation\ResourceValidator.cs" />
+    <Compile Include="Validation\CustomXsltFunction.cs" />
     <Compile Include="Validation\XPath2Context.cs" />
   </ItemGroup>
   <ItemGroup>

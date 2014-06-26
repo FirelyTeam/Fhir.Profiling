@@ -44,16 +44,14 @@ namespace ProfileValidation
             tester.Run(mode);
         }
 
+        // Outputs to c:\temp\report.html
         static void Main(string[] args)
         {
             //Run<PatientTester>(ReportMode.Full);
             //Run<ValueSetsTester>();
             //Run<LipidTester>(ReportMode.Summary); // deze faalt vw. invalide lipid-profile
             //Run<ProfileTester>(ReportMode.Summary);
-            Run<LipidProfileTester>(ReportMode.Summary);
-
-            
-
+            Run<LipidProfileTester>(ReportMode.Summary);          
         }
     }
 }
