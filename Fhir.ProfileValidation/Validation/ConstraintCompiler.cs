@@ -13,29 +13,19 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
 using System.Xml.Xsl;
+using Fhir.IO;
 
 namespace Fhir.Profiling
 {
     public static class ConstraintCompiler
     {
-        static XmlDocument dummydoc = new XmlDocument();
-        static XPathNavigator navigator;
-        static XsltContext context = new XPath2Context();
-        //Report report;
-
-        static ConstraintCompiler()
-        {
-            navigator = dummydoc.CreateNavigator();
-            //this.report = report;
-        }
-
         public static void Compile(Constraint constraint)
         {
             try
             {
                 constraint.Compiled = true;
-                XPathExpression expr = navigator.Compile(constraint.XPath);
-                expr.SetContext(context);
+                var expr = XPathExpression.Compile(constraint.XPath);
+                expr.SetContext(FhirNamespaceManager.CreateManager());
                 constraint.Expression = expr;
                 constraint.IsValid = true;
             }
@@ -44,11 +34,6 @@ namespace Fhir.Profiling
                 constraint.CompilerError = e;
                 constraint.IsValid = false;
             }
-        }
-
-        public static object Eval(string xpath)
-        {
-            return navigator.Evaluate(xpath, context);
         }
     }
 }

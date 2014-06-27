@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fhir.IO;
 
 namespace Fhir.Profiling
 {
@@ -96,7 +97,7 @@ namespace Fhir.Profiling
             }
 
             if (element.NameSpacePrefix == null)
-                element.NameSpacePrefix = Namespace.Fhir;
+                element.NameSpacePrefix = FhirNamespaceManager.Fhir;
             
         }
 
@@ -105,7 +106,6 @@ namespace Fhir.Profiling
             foreach (Element element in profile.Elements.Where(e => e.NameSpacePrefix == null))
             {
                 _addNameSpace(element);
-                
             }
         }
 

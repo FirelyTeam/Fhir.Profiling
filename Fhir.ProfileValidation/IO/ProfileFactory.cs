@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fhir.IO;
 
 namespace Fhir.Profiling
 {
@@ -26,7 +27,7 @@ namespace Fhir.Profiling
             structure.Elements.Add(element);
         }
 
-        public static Structure Primitive(string name, string pattern, string nsprefix = Namespace.Fhir)
+        public static Structure Primitive(string name, string pattern, string nsprefix = FhirNamespaceManager.Fhir)
         {
             Structure structure = new Structure();
             structure.Name = name;
@@ -46,8 +47,8 @@ namespace Fhir.Profiling
 
         public static Structure XhtmlStructure()
         {
-            Structure structure = Primitive("xhtml", null, Namespace.XHtml);
-            structure.NameSpacePrefix = Namespace.XHtml;
+            Structure structure = Primitive("xhtml", null, FhirNamespaceManager.XHtml);
+            structure.NameSpacePrefix = FhirNamespaceManager.XHtml;
             return structure;
         }
 

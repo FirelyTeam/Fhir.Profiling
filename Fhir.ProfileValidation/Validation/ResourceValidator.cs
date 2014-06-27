@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
 using System.Text.RegularExpressions;
+using Fhir.IO;
 
 namespace Fhir.Profiling
 {
@@ -160,7 +161,7 @@ namespace Fhir.Profiling
             if (vector.Element.HasTypeRef) //element has a reference, so there are no Element children to validate to. 
                 return;
 
-            if (vector.Element.NameSpacePrefix != Namespace.Fhir)
+            if (vector.Element.NameSpacePrefix != FhirNamespaceManager.Fhir)
                 return;
 
             foreach(Vector v in vector.NodeChildren)
@@ -195,7 +196,7 @@ namespace Fhir.Profiling
             if (!vector.Element.IsPrimitive)
                 return;
 
-            if (vector.Element.NameSpacePrefix != Namespace.Fhir)
+            if (vector.Element.NameSpacePrefix != FhirNamespaceManager.Fhir)
                 return;
 
             try
@@ -233,7 +234,7 @@ namespace Fhir.Profiling
 
         public Vector GetVector(XPathNavigator root)
         {
-            XmlNamespaceManager nsm = Namespace.GetManager(root);
+            XmlNamespaceManager nsm = FhirNamespaceManager.CreateManager(root);
             Structure structure = Profile.GetStructureByName(root.Name);
             Vector vector = Vector.Create(structure, root, nsm);
             return vector;

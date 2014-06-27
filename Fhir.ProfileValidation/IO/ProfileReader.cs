@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.XPath;
+using Fhir.IO;
 
 namespace Fhir.Profiling
 {
@@ -156,7 +157,7 @@ namespace Fhir.Profiling
         {
             Structure structure = new Structure();
             structure.Name = node.SelectSingleNode("f:type/@value", ns).Value;
-            structure.NameSpacePrefix = Namespace.Fhir;
+            structure.NameSpacePrefix = FhirNamespaceManager.Fhir;
             ReadStructureElements(structure, node.Select("f:element", ns));
             return structure;
         }
@@ -176,7 +177,7 @@ namespace Fhir.Profiling
         public List<Structure> Read(IXPathNavigable navigable)
         {
             XPathNavigator navigator = navigable.CreateNavigator();
-            ns = Namespace.GetManager(navigator);
+            ns = FhirNamespaceManager.CreateManager(navigator);
             return ReadProfile(navigator);
         }
 
@@ -202,7 +203,7 @@ namespace Fhir.Profiling
         {
             List<ValueSet> valuesets = new List<ValueSet>();
             XPathNavigator navigator = navigable.CreateNavigator();
-            ns = Namespace.GetManager(navigator);
+            ns = FhirNamespaceManager.CreateManager(navigator);
 
             foreach(XPathNavigator node in navigator.Select("atom:feed/atom:entry/atom:content/f:ValueSet", ns))
             {

@@ -60,7 +60,7 @@
     <Compile Include="Validation\Vector.cs" />
     <Compile Include="IO\FhirDocument.cs" />
     <Compile Include="IO\FhirFeed.cs" />
-    <Compile Include="IO\FhirNamespace.cs" />
+    <Compile Include="IO\FhirNamespaceManager.cs" />
     <Compile Include="IO\InvalidStructureException.cs" />
     <Compile Include="IO\ProfileFactory.cs" />
     <Compile Include="IO\ProfileReader.cs" />
@@ -68,8 +68,8 @@
     <Compile Include="Validation\Report.cs" />
     <Compile Include="Validation\Profile.cs" />
     <Compile Include="Validation\ResourceValidator.cs" />
-    <Compile Include="Validation\CustomXsltFunction.cs" />
-    <Compile Include="Validation\XPath2Context.cs" />
+    <Compile Include="IO\CustomXsltFunction.cs" />
+    <Compile Include="IO\XPath2Context.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
