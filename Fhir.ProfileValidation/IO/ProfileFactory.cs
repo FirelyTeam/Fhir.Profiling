@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace Fhir.Profiling
 {
-    public static class ProfileFactory
+    public static class StructureFactory
     {
        
-        static ProfileFactory()
+        static StructureFactory()
         {
         }
 
@@ -26,7 +26,7 @@ namespace Fhir.Profiling
             structure.Elements.Add(element);
         }
 
-        public static Structure Primitive(string name, string pattern)
+        public static Structure Primitive(string name, string pattern, string nsprefix = Namespace.Fhir)
         {
             Structure structure = new Structure();
             structure.Name = name;
@@ -37,6 +37,7 @@ namespace Fhir.Profiling
             element.IsPrimitive = true;
             element.PrimitivePattern = pattern;
             element.Cardinality = new Cardinality { Min = "1", Max = "1" };
+            element.NameSpacePrefix = nsprefix;
             structure.Elements.Add(element);
 
             AddExtensionElement(structure, element);
@@ -45,8 +46,8 @@ namespace Fhir.Profiling
 
         public static Structure XhtmlStructure()
         {
-            Structure structure = Primitive("xhtml", null);
-            structure.Namespace = Namespace.XHtml;
+            Structure structure = Primitive("xhtml", null, Namespace.XHtml);
+            structure.NameSpacePrefix = Namespace.XHtml;
             return structure;
         }
 
@@ -61,7 +62,7 @@ namespace Fhir.Profiling
             return structures;
         }
 
-        public static List<Structure> MetaTypesProfile()
+        public static List<Structure> MetaTypes()
         {
             string[] list = { "Structure", "Extension", "Resource", "Narrative" };
             // NB. Narrative bevat <status> en <div>, en <div> mag html bevatten. 
@@ -69,7 +70,7 @@ namespace Fhir.Profiling
             return PrimitiveProfileFor(list);
         }
 
-        public static List<Structure> DataTypesProfile()
+        public static List<Structure> MockDataTypes()
         {
             string[] list = {
                 "ratio",
@@ -93,7 +94,7 @@ namespace Fhir.Profiling
             return PrimitiveProfileFor(list);
         }
 
-        public static List<Structure> PrimitiveTypesProfile()
+        public static List<Structure> PrimitiveTypes()
         {
             List<Structure> list = new List<Structure>
             { 
@@ -116,7 +117,7 @@ namespace Fhir.Profiling
             return list;
         }
 
-        public static List<Structure> ExceptionsProfile()
+        public static List<Structure> NonFhirNamespaces()
         {
             List<Structure> list = new List<Structure>();
             list.Add(XhtmlStructure());

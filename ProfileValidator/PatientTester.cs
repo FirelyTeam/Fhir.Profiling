@@ -18,8 +18,8 @@ namespace ProfileValidation
             
             //profile.Add(ProfileFactory.MetaTypesProfile());
             //profile.Add(ProfileFactory.DataTypesProfile());
-            builder.Add(ProfileFactory.PrimitiveTypesProfile());
-            builder.Add(ProfileFactory.ExceptionsProfile());
+            builder.Add(StructureFactory.PrimitiveTypes());
+            builder.Add(StructureFactory.NonFhirNamespaces());
             builder.LoadXMLValueSets("Data\\valuesets.xml");
             builder.LoadXmlFile("Data\\type-Extension.profile.xml");
             builder.LoadXmlFile("Data\\type-HumanName.profile.xml");

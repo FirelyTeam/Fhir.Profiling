@@ -15,35 +15,38 @@ using System.Xml.XPath;
 namespace Fhir.Profiling
 {
 
-    public struct Vector
+    public class Vector
     {
         public Structure Structure;
+        public Vector Origin;
         public Element Element;
         public XPathNavigator Node;
         public XmlNamespaceManager NSM;
 
+        private Vector()
+        {
+
+        }
+
         public static Vector Create(Structure structure, XPathNavigator node, XmlNamespaceManager nsm)
         {
-            Vector vector;
+            Vector vector = new Vector();
             vector.Structure = structure;
             vector.Element = (structure != null) ? structure.Root : null;
             vector.Node = node;
             vector.NSM = nsm;
+            vector.Origin = vector; 
             return vector;
         }
-        
-        public static Vector Void()
-        {
-            return Create(null, null, null);
-        }
-        
+
         public Vector Clone()
         {
-            Vector clone;
+            Vector clone = new Vector();
             clone.Structure = this.Structure;
             clone.Element = this.Element;
             clone.Node = this.Node.CreateNavigator();
             clone.NSM = this.NSM;
+            clone.Origin = this.Origin;
             return clone;
         }
 
@@ -119,7 +122,7 @@ namespace Fhir.Profiling
         {
             XPathNavigator n = Node.CreateNavigator();
             string s = n.Name;
-            while (n.MoveToParent())
+            while (!n.IsSamePosition(Origin.Node) && n.MoveToParent())
             {
                 if (!string.IsNullOrEmpty(n.Name))
                     s = n.Name + "." + s;
@@ -202,7 +205,7 @@ namespace Fhir.Profiling
 
         public override string ToString()
         {
-            return string.Format("{0}:{1} × {2}", Structure.Name, Element, NodePath());
+            return string.Format("{0} × {1}", Element, NodePath());
         }
     }
 

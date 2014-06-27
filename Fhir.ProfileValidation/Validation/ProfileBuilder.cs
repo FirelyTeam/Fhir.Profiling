@@ -84,13 +84,31 @@ namespace Fhir.Profiling
             }
         }
 
+        public void _addNameSpace(Element element)
+        {
+            if (element.HasTypeRef)
+            {
+                TypeRef typeref = element.TypeRefs.FirstOrDefault(t => t.Structure != null);
+                if (typeref != null)
+                {
+                    element.NameSpacePrefix = typeref.Structure.NameSpacePrefix;
+                }
+            }
+
+            if (element.NameSpacePrefix == null)
+                element.NameSpacePrefix = Namespace.Fhir;
+            
+        }
+
         public void _addNameSpaces()
         {
-            foreach (Element element in profile.Elements.Where(e => e.Namespace == null))
+            foreach (Element element in profile.Elements.Where(e => e.NameSpacePrefix == null))
             {
-                element.Namespace = Namespace.Fhir;
+                _addNameSpace(element);
+                
             }
         }
+
         private void _compileConstraints()
         {
             foreach (Constraint c in profile.Constraints)
@@ -107,10 +125,10 @@ namespace Fhir.Profiling
         {
             _linkBindings();
             _linkElements();
-            _addNameSpaces();
             _linkStructures();
             _linkElementRefs();
             _compileConstraints();
+            _addNameSpaces();
         }
 
         public Profile ToProfile()

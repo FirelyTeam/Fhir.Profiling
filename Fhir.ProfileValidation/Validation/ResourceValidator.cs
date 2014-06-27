@@ -58,17 +58,26 @@ namespace Fhir.Profiling
         }
 
         public void ValidateCardinality(Vector vector)
-        {
+        {   
             int count = vector.Count(); 
             if (vector.Element.Cardinality.InRange(count))
             {
-                report.Add("Cardinality", Kind.Valid, vector, "Cardinality of element [{0}] is valid", vector.Element.Name);
+                report.Add("Cardinality", Kind.Valid, vector, "Cardinality ({1}) of element [{0}] is valid", vector.Element.Name, count);
             }
             else 
             {
-                report.Add("Cardinality", Kind.Invalid, vector, 
-                    "The occurence {0} of node [{1}] under [{2}] is out of range ({3})", 
-                    count, vector.NodePath(), vector.Element.Name, vector.Element.Cardinality);
+                if (count == 0)
+                {
+                    report.Add("Cardinality", Kind.Invalid, vector,
+                     "Node [{0}] has missing child node [{1}] ",
+                     vector.NodePath(), vector.Element.Name);
+                }
+                else
+                {
+                    report.Add("Cardinality", Kind.Invalid, vector,
+                        "The occurence {0} of node [{1}] under [{2}] is out of range ({3})",
+                        count, vector.NodePath(), vector.Element.Name, vector.Element.Cardinality);
+                }
             }
         }
 
@@ -148,8 +157,11 @@ namespace Fhir.Profiling
 
         public void ValidateNodeChildren(Vector vector)
         {
-            if (vector.Element.HasTypeRef) //element has a reference, so it has no children itself
-                return; 
+            if (vector.Element.HasTypeRef) //element has a reference, so there are no Element children to validate to. 
+                return;
+
+            if (vector.Element.NameSpacePrefix != Namespace.Fhir)
+                return;
 
             foreach(Vector v in vector.NodeChildren)
             {
@@ -181,6 +193,9 @@ namespace Fhir.Profiling
             // fail. validation of primites should be done at the root element
             // this should be the root element of a structure
             if (!vector.Element.IsPrimitive)
+                return;
+
+            if (vector.Element.NameSpacePrefix != Namespace.Fhir)
                 return;
 
             try

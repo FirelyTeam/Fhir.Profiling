@@ -29,6 +29,6 @@ namespace Fhir.Profiling
         {
             return string.Format("{0} ({1} elements)", Name, Elements.Count);
         }
-        public string Namespace { get; set; }
+        public string NameSpacePrefix { get; set; }
     }
 }

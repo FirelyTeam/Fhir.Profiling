@@ -42,7 +42,9 @@ namespace Fhir.Profiling
         public string PrimitivePattern {get; set;} // RegExPattern to validate a primite against (only in case of IsPrimitive)
         public string BindingUri;
         public ValueSet Binding;
-        public string Namespace { get; set; } // namespace key (f=fhir, xhtml, etc.)
+
+        // namespace key (f=fhir, xhtml, etc.)
+        public string NameSpacePrefix { get; set; }
 
         //public Slicing Slicing { get; set; }
         public int Slice { get; set; }
@@ -76,7 +78,7 @@ namespace Fhir.Profiling
                 }
                 else
                 {
-                    xpath = string.Format("./{0}:{1}", this.Namespace, Segment.Name);
+                    xpath = string.Format("./{0}:{1}", this.NameSpacePrefix, Segment.Name);
                 }
                 return xpath;
             }

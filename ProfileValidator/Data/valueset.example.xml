@@ -47,7 +47,8 @@
           <system value="url"/>
           <value value="http://hl7.org/fhir"/>
         </telecom>
-        <description value="This is an example value set that includes        all the LOINC codes for serum cholesterol from v2.36"/>
+        <description value="This is an example value set that includes all the LOINC codes for serum cholesterol from v2.36">
+        </description>
         <status value="draft"/>
         <experimental value="true"/>
         <date value="2012-06-13"/>

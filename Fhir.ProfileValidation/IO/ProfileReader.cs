@@ -85,9 +85,10 @@ namespace Fhir.Profiling
             {
                 Constraint constraint = new Constraint();
                 XPathNavigator xName = nav.SelectSingleNode("f:name/@value", ns);
+                string key = OptionalValue(nav, "f:key/@value");
                 // todo: Constraint naam ontbreekt soms. Dit is eigenlijk een bug in de FHIR profile generator. 
                 // Maar nu moeten we er maar even omheen werken.
-                constraint.Name = (xName != null) ? xName.Value : "Constraint"+(++constraintnr).ToString();
+                constraint.Name = (xName != null) ? xName.Value : element.Path+", Key:"+key;
                 constraint.XPath = nav.SelectSingleNode("f:xpath/@value", ns).Value;
                 constraint.HumanReadable = OptionalValue(nav, "f:human/@value");
                 element.Constraints.Add(constraint);
@@ -155,7 +156,7 @@ namespace Fhir.Profiling
         {
             Structure structure = new Structure();
             structure.Name = node.SelectSingleNode("f:type/@value", ns).Value;
-            structure.Namespace = Namespace.Fhir;
+            structure.NameSpacePrefix = Namespace.Fhir;
             ReadStructureElements(structure, node.Select("f:element", ns));
             return structure;
         }

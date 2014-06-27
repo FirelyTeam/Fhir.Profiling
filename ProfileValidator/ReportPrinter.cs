@@ -47,6 +47,7 @@ namespace Fhir.Profiling
         {
             WriteLine(OutcomeToString(outcome));
 
+            if (outcome.Vector != null)
             if (outcome.Vector.Element != null)
                 if (outcome.Vector.Element.Path != null)
                 {
