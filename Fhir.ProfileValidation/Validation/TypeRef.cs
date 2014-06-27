@@ -20,7 +20,6 @@ namespace Fhir.Profiling
         public override string ToString()
         {
             string s = Code;
-            if (Structure == null) s += "(unknown)";
             return s;
         }
     }

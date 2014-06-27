@@ -52,7 +52,7 @@ namespace Fhir.Profiling
                 {
                     string type = 
                         outcome.Vector.Element.TypeRefs.Count > 0 ?
-                        " ("+string.Join(".", outcome.Vector.Element.TypeRefs)+")" : null;
+                        " (type: "+string.Join(".", outcome.Vector.Element.TypeRefs)+")" : null;
                     
                     WriteLine("<span>{0}{1}</span>\n",
                         string.Join(".", outcome.Vector.Element.Path),

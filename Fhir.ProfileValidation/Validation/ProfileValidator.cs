@@ -45,8 +45,8 @@ namespace Fhir.Profiling
             else 
             {
                  report.Add("Constraint", Kind.Invalid, 
-                     "Constraint [{0}] has an invalid XPath: {1}", 
-                     constraint.Name, constraint.CompilerError.Message);
+                     "Constraint [{0}] ({1}) has an invalid XPath: {2}", 
+                     constraint.Name, constraint.HumanReadable, constraint.CompilerError.Message);
             }
         }
 
