@@ -52,7 +52,7 @@ namespace Fhir.Profiling
             }
             else
             {
-                report.Add("Coding", Kind.Invalid, vector, "Code [{0}] ({1}) contains a nonexisting value [{2}]",
+                report.Add("Coding", Kind.Failed, vector, "Code [{0}] ({1}) contains a nonexisting value [{2}]",
                     vector.Element.Name, vector.Element.Binding.System, value);
             }
             
@@ -69,13 +69,13 @@ namespace Fhir.Profiling
             {
                 if (count == 0)
                 {
-                    report.Add("Cardinality", Kind.Invalid, vector,
+                    report.Add("Cardinality", Kind.Failed, vector,
                      "Node [{0}] has missing child node [{1}] ",
                      vector.NodePath(), vector.Element.Name);
                 }
                 else
                 {
-                    report.Add("Cardinality", Kind.Invalid, vector,
+                    report.Add("Cardinality", Kind.Failed, vector,
                         "The occurence {0} of node [{1}] under [{2}] is out of range ({3})",
                         count, vector.NodePath(), vector.Element.Name, vector.Element.Cardinality);
                 }
@@ -92,11 +92,11 @@ namespace Fhir.Profiling
                     if (valid)
                         report.Add("Constraint", Kind.Valid, vector, "Node [{0}] conforms to constraint [{1}]", vector.Node.Name, constraint.Name);
                     else
-                        report.Add("Constraint", Kind.Invalid, vector, "Node [{0}] does not conform to constraint [{1}]: {2} ", vector.Node.Name, constraint.Name, constraint.HumanReadable);
+                        report.Add("Constraint", Kind.Failed, vector, "Node [{0}] does not conform to constraint [{1}]: {2} ", vector.Node.Name, constraint.Name, constraint.HumanReadable);
                 }
                 catch (XPathException e)
                 {
-                    report.Add("Constraint", Kind.Invalid, vector, "Evaluation of constraint [{0}] evaluation failed: {1}", constraint.Name, e.Message);
+                    report.Add("Constraint", Kind.Failed, vector, "Evaluation of constraint [{0}] evaluation failed: {1}", constraint.Name, e.Message);
                 }
             }
         }
@@ -162,7 +162,10 @@ namespace Fhir.Profiling
                 return;
 
             if (vector.Element.NameSpacePrefix != FhirNamespaceManager.Fhir)
+            {
+                report.Add("Element", Kind.Info, "Element [{0}] was skipped because it was not in the FHIR namespace.", vector.Element.Name);
                 return;
+            }
 
             foreach(Vector v in vector.NodeChildren)
             {
@@ -174,6 +177,7 @@ namespace Fhir.Profiling
         {
              
         }
+
         public void ValidateElement(Vector vector)
         {
             report.Start("element", vector);
@@ -209,12 +213,12 @@ namespace Fhir.Profiling
                 }
                 else
                 {
-                    report.Add("Primitive", Kind.Invalid, vector, "The value format ({0}) of primitive [{1}] not valid: '{2}'", vector.Element.Name, vector.Node.Name, value);
+                    report.Add("Primitive", Kind.Failed, vector, "The value format ({0}) of primitive [{1}] not valid: '{2}'", vector.Element.Name, vector.Node.Name, value);
                 }
             }
             catch
             {
-                report.Add("Primitive", Kind.Invalid, vector, "The value of primitive [{0}] was not present.", vector.Node.Name);
+                report.Add("Primitive", Kind.Failed, vector, "The value of primitive [{0}] was not present.", vector.Node.Name);
             }
         }
      

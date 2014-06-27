@@ -44,7 +44,7 @@ namespace Fhir.Profiling
             }
             else 
             {
-                 report.Add("Constraint", Kind.Invalid, 
+                 report.Add("Constraint", Kind.Failed, 
                      "Constraint [{0}] ({1}) has an invalid XPath: {2}", 
                      constraint.Name, constraint.HumanReadable, constraint.CompilerError.Message);
             }
@@ -74,7 +74,7 @@ namespace Fhir.Profiling
             // Test if there is a reference at all
             else if (typeref.Code == null)
             {
-                report.Add("Reference", Kind.Invalid, "Missing a reference to a structure in element [{0}]", element.Name);
+                report.Add("Reference", Kind.Failed, "Missing a reference to a structure in element [{0}]", element.Name);
             }
 
             // Test if code is itself valid? If so, the reference valid but the target is missing.
@@ -87,7 +87,7 @@ namespace Fhir.Profiling
             // The code contains invalid characters
             else
             {
-                report.Add("Reference", Kind.Invalid, "Invalid structure reference '{0}' in {1}", typeref.Code, element.Path);
+                report.Add("Reference", Kind.Failed, "Invalid structure reference '{0}' in {1}", typeref.Code, element.Path);
             }
         }
 
@@ -104,7 +104,7 @@ namespace Fhir.Profiling
             if (element.IsAttribute)
             {
                 if (element.Children != null)
-                    report.Add("Attribute", Kind.Invalid, "Element [{0}] is has an attribute representation and can not have children", element);
+                    report.Add("Attribute", Kind.Failed, "Element [{0}] is has an attribute representation and can not have children", element);
             }
         }
 
@@ -122,7 +122,7 @@ namespace Fhir.Profiling
             {
                 if (element.ElementRefPath != null && element.ElementRef == null)
                 {
-                    report.Add("Reference", Kind.Invalid, 
+                    report.Add("Reference", Kind.Failed, 
                         "Element [{0}] Name reference to different element [{1}] is unresolved", 
                         element.Path, element.ElementRefPath);
                 }

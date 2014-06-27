@@ -47,7 +47,7 @@ namespace ProfileValidation
         static void Main(string[] args)
         {
             //Run<PatientTester>(ReportMode.Full);
-            Run<ValueSetsTester>(ReportMode.Summary);
+            Run<ValueSetsTester>(ReportMode.Full);
             //Run<LipidTester>(ReportMode.Full); // deze faalt vw. invalide lipid-profile
             //Run<ProfileTester>(ReportMode.Summary);
             //Run<LipidProfileTester>(ReportMode.Summary);

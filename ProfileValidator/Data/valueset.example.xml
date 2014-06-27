@@ -52,7 +52,7 @@
         <status value="draft"/>
         <experimental value="true"/>
         <date value="2012-06-13"/>
-        <compose>
+        <composer>
           <include>
             <system value="http://loinc.org"/>
             <version value="2.36"/>
@@ -61,7 +61,7 @@
             <code value="35200-5"/>
             <code value="9342-7"/>
           </include>
-        </compose>
+        </composer>
       </ValueSet>
     </content>
     <summary type="xhtml">

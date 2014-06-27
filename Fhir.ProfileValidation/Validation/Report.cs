@@ -13,17 +13,17 @@ using System.Threading.Tasks;
 
 namespace Fhir.Profiling
 {
-    public enum Kind { Valid, Invalid, Incomplete, Unknown, Info, Start, End, Skipped, Any }
+    public enum Kind { Valid, Failed, Incomplete, Unknown, Info, Start, End, Skipped, Any }
 
     public static class KindExtensions
     {
         public static Kind ToKind(this bool b)
         {
-            return b ? Kind.Valid : Kind.Invalid;
+            return b ? Kind.Valid : Kind.Failed;
         }
         public static bool Failed(this Kind kind)
         {
-            Kind[] fails = { Kind.Invalid, Kind.Incomplete, Kind.Unknown };
+            Kind[] fails = { Kind.Failed, Kind.Incomplete, Kind.Unknown };
             return fails.Contains(kind);
         }
     }

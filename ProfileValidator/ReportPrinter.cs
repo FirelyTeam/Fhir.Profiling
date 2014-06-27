@@ -70,14 +70,14 @@ namespace Fhir.Profiling
                 case Kind.Any:
                 case Kind.Start:
                 case Kind.End: 
-                case Kind.Info: 
+                case Kind.Info:
+                case Kind.Skipped:
                     tag = "u";
                     break;
 
-                case Kind.Invalid:
+                case Kind.Failed:
                 case Kind.Incomplete:
                 case Kind.Unknown:
-                case Kind.Skipped:
                     tag = "b";
                     break;
 
