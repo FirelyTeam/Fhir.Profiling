@@ -23,9 +23,7 @@ namespace Fhir.IO
         public static XmlNamespaceManager CreateManager(XPathNavigator navigator)
         {
             XmlNamespaceManager nsm = new XPath2Context((NameTable)navigator.NameTable);
-            nsm.AddNamespace(FhirNamespaceManager.Fhir, "http://hl7.org/fhir");
-            nsm.AddNamespace(FhirNamespaceManager.Atom, "http://www.w3.org/2005/Atom");
-            nsm.AddNamespace(FhirNamespaceManager.XHtml, "http://www.w3.org/1999/xhtml");
+            addNamespaces(nsm);
             return nsm;
 
         }
@@ -33,10 +31,15 @@ namespace Fhir.IO
         public static XmlNamespaceManager CreateManager()
         {
             XmlNamespaceManager nsm = new XPath2Context();
-            nsm.AddNamespace(FhirNamespaceManager.Fhir, "http://hl7.org/fhir");
-            nsm.AddNamespace(FhirNamespaceManager.Atom, "http://www.w3.org/2005/Atom");
-            nsm.AddNamespace(FhirNamespaceManager.XHtml, "http://www.w3.org/1999/xhtml");
+            addNamespaces(nsm);
             return nsm;
+        }
+
+        private static void addNamespaces(XmlNamespaceManager mgr)
+        {
+            mgr.AddNamespace(FhirNamespaceManager.Fhir, "http://hl7.org/fhir");
+            mgr.AddNamespace(FhirNamespaceManager.Atom, "http://www.w3.org/2005/Atom");
+            mgr.AddNamespace(FhirNamespaceManager.XHtml, "http://www.w3.org/1999/xhtml");
         }
     }
 }

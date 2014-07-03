@@ -74,5 +74,35 @@ namespace Fhir.Profiling.Tests
             expr.SetContext(mgr);
             Assert.AreEqual(2, Convert.ToInt32(p.Evaluate(expr)));
         }
+
+
+        [TestMethod]
+        public void TestSyntaxError()
+        {
+            var d = testDoc();
+            var mgr = FhirNamespaceManager.CreateManager(d);
+
+            var p = d.SelectSingleNode("/f:parent", mgr);
+            var expr = p.Compile("not(descendant-or-self::*/@*[not(name(.)=('abbr','accesskey', 'align', 'alt', 'axis'))])");
+            expr.SetContext(mgr);
+            Assert.IsTrue((bool)p.Evaluate(expr));
+        }
+        
+
+        [TestMethod]
+        public void TestForError()
+        {
+            var d = testDoc();
+            var mgr = FhirNamespaceManager.CreateManager(d);
+
+            var p = d.SelectSingleNode("/f:parent", mgr);
+            var expr = p.Compile("exists(for $id in f:contained/*/@id return $id[not(descendant::f:reference/@value=concat('#', $id))])");
+            expr.SetContext(mgr);
+            Assert.IsTrue((bool)p.Evaluate(expr));
+        }
+
+
+        
+        
     }
 }
