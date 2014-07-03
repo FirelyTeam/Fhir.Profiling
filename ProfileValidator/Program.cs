@@ -20,11 +20,12 @@ using Fhir;
 namespace ProfileValidation
 {
 
+    // TODO: fixed value testen (er is nog geen testdata)
     // merge declaring profile with restricting profile (declaring profile is not a standard yet)
     // todo: ValueSet vs. CodeSystem
     
     // todo: resourceReference can refer to <profile> which is a structure.
-
+    // todo: adding JSON tests
     // todo: Element names are profile URI specific (names can overlap with other profiles)
     // todo: Merge Profile class (when possible) with Api.Introspection and Api.ModelInfo
     // todo: When an element type is a ResourceReference, then the path does not contain [x]. The restriction is content of the refered resource.
@@ -38,7 +39,7 @@ namespace ProfileValidation
 
     class Program
     {
-        public static void Run<T>(ReportMode mode) where T:Tester, new()
+        public static void Run<T>(ReportMode mode) where T: Tester, new()
         {
             Tester tester = new T();
             tester.Run(mode);

@@ -203,6 +203,7 @@ A value set can also be &quot;expanded&quot;, where the value set is turned into
         <type>
           <code value="string"/>
         </type>
+        <valueString value="100" />
         <isModifier value="false"/>
         <mapping>
           <identity value="rim"/>

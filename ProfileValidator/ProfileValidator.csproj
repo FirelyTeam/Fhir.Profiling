@@ -60,9 +60,7 @@
       <Name>Fhir.Profiling</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Files\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="Data\profiles-resources.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

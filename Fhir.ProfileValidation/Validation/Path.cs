@@ -13,19 +13,33 @@ using System.Threading.Tasks;
 
 namespace Fhir.Profiling
 {
-    public struct Segment : IComparable<Segment>
+    public class Segment : IEquatable<Segment>
     {
         public string Name;
         public bool Multi;
-        public int CompareTo(Segment other)
+
+        
+        public bool Match(string name)
         {
-            throw new NotImplementedException();
+            if (this.Multi)
+            {
+                return name.StartsWith(this.Name);
+            }
+            else
+            {
+                return name == Name;
+            }
         }
         public override string ToString()
         {
             string s = Name;
             if (Multi) s += "[x]";
             return s;
+        }
+
+        public bool Equals(Segment other)
+        {
+            return this.Match(other.Name);
         }
     }
 
@@ -40,22 +54,36 @@ namespace Fhir.Profiling
                 return Segments.Last();
             }
         }
-        public Path(string path)
+
+        private List<Segment> parsePath(string path)
         {
-            Segments = new List<Segment>();
+            var list = new List<Segment>();
+
             foreach (string s in path.Split('.'))
             {
                 Segment segment = new Segment();
                 string name = Regex.Replace(s, @"\[x\]", "");
                 if (name != s) segment.Multi = true;
                 segment.Name = name;
-                Segments.Add(segment);
+                list.Add(segment);
             }
+            return list;
+        }
+
+        public Path(string path)
+        {
+            Segments = parsePath(path);
         }
 
         public Path(IEnumerable<Segment> segments)
         {
             this.Segments = segments.ToList();
+        }
+
+        public Path ForChild()
+        {
+            Path child = new Path(this.Segments.Skip(1));
+            return child;
         }
 
         public Path Parent()
@@ -94,7 +122,8 @@ namespace Fhir.Profiling
 
         public bool Equals(Path other)
         {
-            return this.Segments.SequenceEqual(other.Segments);
+            bool equal = this.Segments.SequenceEqual(other.Segments);
+            return equal;
         }
     }
 

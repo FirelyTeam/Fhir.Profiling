@@ -105,6 +105,53 @@ namespace Fhir.Profiling
             return parent;
         }
 
+        // todo: test resource boundary path following
+        /// <summary>
+        /// Follows the path into child elements and into other structures. The latter hasn't been tested yet
+        /// </summary>
+        /// <param name="origin">The element where the follow starts </param>
+        /// <param name="path">The path to follow</param>
+        /// <returns>The element (if found) at the end of the path, otherwise returns null</returns>
+        public Element FollowPath(Element origin, Path path)
+        {
+            Segment segment = path.Segments.FirstOrDefault();
+
+            if (segment == null)
+            {
+                // we have arrived at the matching path tail.
+                return origin;
+            }
+            else
+            {
+                Element child = null;
+
+                if (origin.Children.Count > 0)
+                {
+                    child = origin.Children.FirstOrDefault(e => segment.Match(e.Name));
+                }
+                else 
+                {
+                    TypeRef t = origin.TypeRefs.FirstOrDefault();
+                    Structure structure = (t != null) ? t.Structure : null;
+                    Element parent = (structure != null) ? structure.Root : null;
+
+                    if (parent != null)
+                    {
+                        child = parent.Children.FirstOrDefault(e => segment.Match(e.Name));
+                    }
+
+                }
+                
+                if (child != null)
+                {
+                    Element target = FollowPath(child, path.ForChild());
+                    return target;
+                }
+
+                return null;
+            }
+        }
+
         public Element ParentOf(Element element)
         {
             Structure structure = StructureOf(element);

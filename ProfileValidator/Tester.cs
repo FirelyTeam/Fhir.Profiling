@@ -11,8 +11,13 @@ namespace ProfileValidation
 {
     public abstract class Tester
     {
-        static ReportPrinter printer = new ReportPrinter(@"c:\temp\report");            
-        
+        static ReportPrinter printer = new ReportPrinter(@"c:\temp\report");
+        public Profile profile;
+
+        public Tester()
+        {
+            profile = this.LoadProfile();
+        }
         protected Feed LoadResources(string filename)
         {
             return FhirFile.LoadXMLFeed("Data\\" + filename + ".xml");
@@ -45,7 +50,7 @@ namespace ProfileValidation
 
         public void Run(ReportMode mode)
         {
-            Profile profile = LoadProfile();
+            profile = LoadProfile();
             IEnumerable<Feed.Entry> entries = Entries();
             
             ValidateProfile(profile);

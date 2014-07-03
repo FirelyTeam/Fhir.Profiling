@@ -9,7 +9,7 @@ using Fhir.IO;
 
 namespace ProfileValidation
 {
-    class ValueSetsTester : Tester
+    public class ValueSetsTester : Tester
     {
         protected override Profile LoadProfile()
         {

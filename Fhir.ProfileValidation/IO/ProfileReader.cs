@@ -42,12 +42,17 @@ namespace Fhir.Profiling
             element.Cardinality = cardinality;
         }
 
-        public void ReadPath(Element element, XPathNavigator node)
+        public Path ReadElementPath(XPathNavigator node)
         {
             string s = node.SelectSingleNode("f:path/@value", ns).Value;
+            return new Path(s);
+        }
 
-            element.Path = new Path(s);
-            element.Name = element.Path.ElementName;
+        public void ReadFixedValue(Element element, XPathNavigator node)
+        {
+            string xpath = string.Format("f:definition/*[starts-with(name(),'value')]/@value");
+            string value = OptionalValue(node, xpath);
+            element.FixedValue = value;
         }
 
         public void ReadReference(Element element, XPathNavigator node)
@@ -100,46 +105,70 @@ namespace Fhir.Profiling
             return sliced;
         }
 
-        private Slicing readSlicing(Element element, XPathNavigator node)
+        private Slicing readSlicing(XPathNavigator node)
         {
             Slicing slicing = new Slicing();
             slicing.Discriminator = new Path(Value(node, "f:slicing/f:discriminator/@value"));
-            slicing.Path = element.Path;
+            slicing.Path = ReadElementPath(node);
             //slicing.Rule = (SlicingRules)Enum.Parse(typeof(SlicingRules), Value(node, "f:slicing/f:rules/@value"));
             //slicing.Ordered = (Value(node, "f:slicing/f:ordered/@value").ToLower() == "true");
             return slicing;
         }
 
-        public void PatchSliceInfo(Element element)
+        internal Slicing GetSlicingForElement(Element element)
         {
             Slicing slicing = Slicings.FirstOrDefault(s => s.Path.Equals(element.Path));
+            return slicing;
+        }
+
+        public void PreReadSlices(Structure structure, XPathNodeIterator xNodes)
+        {
+            foreach (XPathNavigator node in xNodes)
+            {
+                if (IsSliced(node))
+                {
+                    Slicing s = readSlicing(node);
+                    Slicings.Add(s);
+                }
+            }
+        }
+
+        public void InjectSlice(Element element, XPathNavigator node)
+        {
+            Slicing slicing = GetSlicingForElement(element);
             if (slicing != null)
             {
-                element.Discriminator = slicing.Discriminator;
-                element.Slice = slicing.Count++;
+                if (IsSliced(node))
+                {
+                    // todo: SlicingRules op de slicing-element-null implementeren
+                }
+                else
+                {
+                    element.Discriminator = slicing.Discriminator;
+                    slicing.Count++;
+                }
             }
+
         }
 
         public void ReadElementDefinition(Element element, XPathNavigator node)
         {
-            ReadPath(element, node);
+
+            element.Path = ReadElementPath(node);
+            element.Name = element.Path.ElementName;
             ReadReference(element, node);
             ReadTypeRefs(element, node);
             ReadElementRef(element, node);
             ReadCardinality(element, node);
             ReadConstraints(element, node);
+            ReadFixedValue(element, node);
+            InjectSlice(element, node);
         }
      
-        public Element ReadElement(XPathNavigator node)
+        public Element ReadElement(Structure structure, XPathNavigator node)
         {
             Element element = new Element();
-            if (IsSliced(node))
-            {
-                Slicing s = readSlicing(element, node);
-                Slicings.Add(s);
-            }
             ReadElementDefinition(element, node);
-            
             return element;
         }
 
@@ -147,7 +176,8 @@ namespace Fhir.Profiling
         {
             foreach (XPathNavigator xElement in xElements)
             {
-                structure.Elements.Add(ReadElement(xElement));
+                Element element = ReadElement(structure, xElement);
+                structure.Elements.Add(element);
             }
         }
 
@@ -156,6 +186,7 @@ namespace Fhir.Profiling
             Structure structure = new Structure();
             structure.Name = node.SelectSingleNode("f:type/@value", ns).Value;
             structure.NameSpacePrefix = FhirNamespaceManager.Fhir;
+            PreReadSlices(structure, node.Select("f:element", ns));
             ReadStructureElements(structure, node.Select("f:element", ns));
             return structure;
         }

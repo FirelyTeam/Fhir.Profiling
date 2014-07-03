@@ -71,7 +71,7 @@ namespace Fhir.Profiling
 
         public void _linkElements(Structure structure)
         {
-            foreach (Element e in profile.Elements)
+            foreach (Element e in structure.Elements)
             {
                 _tryLinkToParent(structure, e);
             }

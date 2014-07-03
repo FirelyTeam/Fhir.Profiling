@@ -55,6 +55,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="TestPath.cs" />
     <Compile Include="XsltContextTests.cs" />
     <Compile Include="JTokenExtensionsTests.cs" />
     <Compile Include="JsonNavigatorTests.cs" />
@@ -64,6 +65,10 @@
     <ProjectReference Include="..\Fhir.ProfileValidation\Fhir.Profiling.csproj">
       <Project>{34A3B072-5ABC-4F7C-B7E8-0AB67C58CC61}</Project>
       <Name>Fhir.Profiling</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ProfileValidator\ProfileValidator.csproj">
+      <Project>{6f919a61-f277-4fd8-ae99-3559bbaa8407}</Project>
+      <Name>ProfileValidator</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

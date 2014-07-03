@@ -34,7 +34,7 @@ namespace Fhir.Profiling
         public string ElementRefPath { get; set; }
         public Element ElementRef { get; set; }
         public List<Element> Children = new List<Element>();
-
+        public string FixedValue { get; set; }
         public Cardinality Cardinality;
         public List<Constraint> Constraints = new List<Constraint>();
         public bool IsPrimitive { get; set; }

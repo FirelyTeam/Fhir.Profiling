@@ -92,7 +92,7 @@ namespace Fhir.Profiling
                     if (valid)
                         report.Add("Constraint", Kind.Valid, vector, "Node [{0}] conforms to constraint [{1}]", vector.Node.Name, constraint.Name);
                     else
-                        report.Add("Constraint", Kind.Failed, vector, "Node [{0}] does not conform to constraint [{1}]: {2} ", vector.Node.Name, constraint.Name, constraint.HumanReadable);
+                        report.Add("Constraint", Kind.Failed, vector, "Node [{0}] does not conform to constraint [{1}]: \"{2}\" ", vector.Node.Name, constraint.Name, constraint.HumanReadable);
                 }
                 catch (XPathException e)
                 {
@@ -123,6 +123,55 @@ namespace Fhir.Profiling
             foreach(Vector v in vector.ElementStructures)
             {
                 ValidateStructure(v);
+            }
+        }
+
+        public void ValidatePrimitive(Vector vector)
+        {
+            // fail. validation of primites should be done at the root element
+            // this should be the root element of a structure
+            if (!vector.Element.IsPrimitive)
+                return;
+
+            if (vector.Element.NameSpacePrefix != FhirNamespaceManager.Fhir)
+                return;
+
+            try
+            {
+                string value = vector.GetContent();
+                string pattern = vector.Element.PrimitivePattern;
+                if (Regex.IsMatch(value, pattern))
+                {   
+                    report.Add("Primitive", Kind.Valid, vector, "The value format ({0}) of primitive [{1}] is valid. ", vector.Element.Name, vector.Node.Name);
+                }
+                else
+                {
+                    report.Add("Primitive", Kind.Failed, vector, "The value format ({0}) of primitive [{1}] not valid: '{2}'", vector.Element.Name, vector.Node.Name, value);
+                }
+            }
+            catch
+            {
+                report.Add("Primitive", Kind.Failed, vector, "The value of primitive [{0}] was not present.", vector.Node.Name);
+            }
+        }
+
+        public void ValidateFixedValue(Vector vector)
+        {
+            string fixvalue = vector.Element.FixedValue;
+            XPathNavigator node = vector.Node.SelectSingleNode("@value");
+            string value = (node != null) ? node.Value : null;
+
+            if (fixvalue != null)
+            {
+                bool equal = fixvalue.Equals(value);
+                if (equal)
+                {
+                    report.Add("Value", Kind.Valid, vector, "Fixed value validated correctly");
+                }
+                else
+                {
+                    report.Add("Value", Kind.Failed, vector, "Value [{0}] doesn't match fixed value [{1}] of element [{2}]", value, fixvalue, vector.Element.Name);
+                }
             }
         }
 
@@ -185,6 +234,7 @@ namespace Fhir.Profiling
             ValidateConstraints(vector);
             ValidateStructures(vector);
             ValidatePrimitive(vector);
+            ValidateFixedValue(vector);
             ValidateForMissingStructures(vector);
             ValidateNodeChildren(vector);
             ValidateElementChildren(vector);
@@ -192,36 +242,7 @@ namespace Fhir.Profiling
             ValidateSlices(vector);
             report.End();
         }
-
-        public void ValidatePrimitive(Vector vector)
-        {
-            // fail. validation of primites should be done at the root element
-            // this should be the root element of a structure
-            if (!vector.Element.IsPrimitive)
-                return;
-
-            if (vector.Element.NameSpacePrefix != FhirNamespaceManager.Fhir)
-                return;
-
-            try
-            {
-                string value = vector.GetContent();
-                string pattern = vector.Element.PrimitivePattern;
-                if (Regex.IsMatch(value, pattern))
-                {   
-                    report.Add("Primitive", Kind.Valid, vector, "The value format ({0}) of primitive [{1}] is valid. ", vector.Element.Name, vector.Node.Name);
-                }
-                else
-                {
-                    report.Add("Primitive", Kind.Failed, vector, "The value format ({0}) of primitive [{1}] not valid: '{2}'", vector.Element.Name, vector.Node.Name, value);
-                }
-            }
-            catch
-            {
-                report.Add("Primitive", Kind.Failed, vector, "The value of primitive [{0}] was not present.", vector.Node.Name);
-            }
-        }
-     
+        
         public void ValidateStructure(Vector vector)
         {
             if (vector.Structure == null)
@@ -244,10 +265,10 @@ namespace Fhir.Profiling
             return vector;
         }
 
-        public Report Validate(IXPathNavigable navigable)
+        public Report Validate(XPathNavigator navigator)
         {
             report.Clear();
-            XPathNavigator root = navigable.CreateNavigator();
+            XPathNavigator root = navigator.CreateNavigator();
             Vector vector = GetVector(root);
             
             ValidateStructure(vector);
