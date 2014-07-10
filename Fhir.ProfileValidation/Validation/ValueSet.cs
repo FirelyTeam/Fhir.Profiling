@@ -20,5 +20,9 @@ namespace Fhir.Profiling
         {
             return codes.Exists(c => c == code);
         }
+        public override string ToString()
+        {
+            return System;
+        }
     }
 }

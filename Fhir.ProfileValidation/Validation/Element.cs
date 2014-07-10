@@ -16,7 +16,7 @@ namespace Fhir.Profiling
     {
         public string Name;
         public Path Path { get; set; }
-        public Segment Segment
+        public Segment TailSegment
         {
             get
             {
@@ -42,11 +42,7 @@ namespace Fhir.Profiling
         public string PrimitivePattern {get; set;} // RegExPattern to validate a primite against (only in case of IsPrimitive)
         public string BindingUri;
         public ValueSet Binding;
-
-        // namespace key (f=fhir, xhtml, etc.)
         public string NameSpacePrefix { get; set; }
-
-        //public Slicing Slicing { get; set; }
         public int Slice { get; set; }
         public Path Discriminator { get; set; }
 
@@ -72,13 +68,13 @@ namespace Fhir.Profiling
             {
                 string xpath;
 
-                if (Segment.Multi)
+                if (TailSegment.Multi)
                 {
-                    xpath = string.Format("./*[starts-with(name(),'{0}')]", Segment.Name);
+                    xpath = string.Format("./*[starts-with(name(),'{0}')]", TailSegment.Name);
                 }
                 else
                 {
-                    xpath = string.Format("./{0}:{1}", this.NameSpacePrefix, Segment.Name);
+                    xpath = string.Format("./{0}:{1}", this.NameSpacePrefix, TailSegment.Name);
                 }
                 return xpath;
             }
@@ -86,7 +82,7 @@ namespace Fhir.Profiling
 
         public bool NodeNameIsMatch(string name)
         {
-            if (Segment.Multi)
+            if (TailSegment.Multi)
             {
                 return name.StartsWith(this.Name);
             }
@@ -101,6 +97,7 @@ namespace Fhir.Profiling
             return this.Children.FirstOrDefault(c => c.NodeNameIsMatch(name)) != null;
 
         }
+        
         public bool HasChildren
         {
             get

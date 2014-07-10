@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Fhir.Profiling
 {
-    public enum ReportMode {  Full, Summary };
+    public enum ReportMode {  Full, Errors, Raw };
 
     public class ReportPrinter
     {
@@ -43,7 +43,7 @@ namespace Fhir.Profiling
             Write("<h1>{0}</h1>", s);
         }
 
-        public void WriteOutcome(Outcome outcome)
+        public void WriteOutcome(Report.Outcome outcome)
         {
             WriteLine(OutcomeToString(outcome));
 
@@ -61,27 +61,27 @@ namespace Fhir.Profiling
                 }
         }
 
-        public string OutcomeToString(Outcome outcome)
+        public string OutcomeToString(Report.Outcome outcome)
         {
             string tag = "u";
 
             switch(outcome.Kind)
             {
-                case Kind.Any:
-                case Kind.Start:
-                case Kind.End: 
-                case Kind.Info:
-                case Kind.Skipped:
+                case Status.Any:
+                case Status.Start:
+                case Status.End: 
+                case Status.Info:
+                case Status.Skipped:
                     tag = "u";
                     break;
 
-                case Kind.Failed:
-                case Kind.Incomplete:
-                case Kind.Unknown:
+                case Status.Failed:
+                case Status.Incomplete:
+                case Status.Unknown:
                     tag = "b";
                     break;
 
-                case Kind.Valid:
+                case Status.Valid:
                     tag = "i";
                     break;
             }
@@ -90,17 +90,17 @@ namespace Fhir.Profiling
 
         public void PrintAllOutcomes(Report report)
         {
-            foreach (Outcome outcome in report.Outcomes)
+            foreach (Report.Outcome outcome in report)
             {
                 string i = indent(outcome.Nesting);
 
                 switch (outcome.Kind)
                 {
-                    case Kind.Start:
+                    case Status.Start:
                         WriteLine(i + string.Format("<u>{0}</u> {1} ({2})", outcome.Type, outcome.Vector.Element.Name, outcome.Vector.Node.Name));
                         WriteLine(i + "{{");
                         break;
-                    case Kind.End:
+                    case Status.End:
                         WriteLine(i + "}}");
                         break;
                     default:
@@ -112,7 +112,7 @@ namespace Fhir.Profiling
 
         public void PrintFailedOutcomes(Report report)
         {
-            foreach (Outcome outcome in report.Outcomes)
+            foreach (Report.Outcome outcome in report)
             {
                 if (outcome.Kind.Failed())
                 {
@@ -130,7 +130,7 @@ namespace Fhir.Profiling
 
         public void PrintSummary(Report report)
         {
-            if (report.Valid)
+            if (report.IsValid)
             {
                 WriteLine("<div>");
                 WriteLine("Resource is valid");

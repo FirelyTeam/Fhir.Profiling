@@ -17,6 +17,25 @@ namespace Fhir.IO
 {
     public static class FhirFile
     {
+        public static XPathNavigator LoadResource(string filename)
+        {
+            XmlDocument document = new XmlDocument();
+            document.Load(filename);
+        
+            XPathNavigator navigator = document.CreateNavigator();
+            XmlNamespaceManager manager = new XmlNamespaceManager(navigator.NameTable);
+            manager.AddNamespace("f", "http://hl7.org/fhir");
+            return navigator.SelectSingleNode("*");
+        }
+
+        public static IEnumerable<XPathNavigator> LoadResources(string filename)
+        {
+            XmlDocument document = new XmlDocument();
+            document.Load(filename);
+            Feed feed = new Feed(document);
+            return feed.Resources;
+        }
+
         public static List<Structure> LoadXmlFile(string filename)
         {
             XmlDocument document = new XmlDocument();
@@ -62,7 +81,6 @@ namespace Fhir.IO
             return entry;
         }
 
-       
         public static void LoadXMLValueSets(this ProfileBuilder builder, string filename)
         {
             XmlDocument document = new XmlDocument();

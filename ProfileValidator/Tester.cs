@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace ProfileValidation
 {
+    
     public abstract class Tester
     {
         static ReportPrinter printer = new ReportPrinter(@"c:\temp\report");
@@ -18,6 +19,7 @@ namespace ProfileValidation
         {
             profile = this.LoadProfile();
         }
+
         protected Feed LoadResources(string filename)
         {
             return FhirFile.LoadXMLFeed("Data\\" + filename + ".xml");

@@ -16,25 +16,16 @@ using Fhir.IO;
 
 namespace Fhir.Profiling
 {
-
+  
     public class ResourceValidator
     {
+        
         private Profile Profile = new Profile();
-        private Report report = new Report();
+        private ReportBuilder reporter = new ReportBuilder();
 
         public ResourceValidator(Profile profile)
         {
             this.Profile = profile;
-        }
-
-        public bool ValidateCoding(string name, string code)
-        {
-            ValueSet valueset = Profile.GetValueSetByUri(name);
-            if (valueset != null)
-            {
-                return valueset.Contains(code);
-            }
-            else return false;
         }
 
         public void ValidateCode(Vector vector)
@@ -47,12 +38,12 @@ namespace Fhir.Profiling
             
             if (exists)
             {
-                report.Add("Coding", Kind.Valid, vector, "Code [{0}] ({1}) is valid [{2}]",
+                reporter.Add(Group.Coding, Status.Valid, vector, "Code [{0}] ({1}) is valid [{2}]",
                     vector.Element.Name, vector.Element.Binding.System, value);
             }
             else
             {
-                report.Add("Coding", Kind.Failed, vector, "Code [{0}] ({1}) contains a nonexisting value [{2}]",
+                reporter.Add(Group.Coding, Status.Failed, vector, "Code [{0}] ({1}) contains a nonexisting value [{2}]",
                     vector.Element.Name, vector.Element.Binding.System, value);
             }
             
@@ -63,19 +54,19 @@ namespace Fhir.Profiling
             int count = vector.Count(); 
             if (vector.Element.Cardinality.InRange(count))
             {
-                report.Add("Cardinality", Kind.Valid, vector, "Cardinality ({1}) of element [{0}] is valid", vector.Element.Name, count);
+                reporter.Add(Group.Cardinality, Status.Valid, vector, "Cardinality ({1}) of element [{0}] is valid", vector.Element.Name, count);
             }
             else 
             {
                 if (count == 0)
                 {
-                    report.Add("Cardinality", Kind.Failed, vector,
+                    reporter.Add(Group.Cardinality, Status.Failed, vector,
                      "Node [{0}] has missing child node [{1}] ",
                      vector.NodePath(), vector.Element.Name);
                 }
                 else
                 {
-                    report.Add("Cardinality", Kind.Failed, vector,
+                    reporter.Add(Group.Cardinality, Status.Failed, vector,
                         "The occurence {0} of node [{1}] under [{2}] is out of range ({3})",
                         count, vector.NodePath(), vector.Element.Name, vector.Element.Cardinality);
                 }
@@ -90,13 +81,13 @@ namespace Fhir.Profiling
                 {
                     bool valid = vector.Evaluate(constraint);
                     if (valid)
-                        report.Add("Constraint", Kind.Valid, vector, "Node [{0}] conforms to constraint [{1}]", vector.Node.Name, constraint.Name);
+                        reporter.Add(Group.Constraint, Status.Valid, vector, "Node [{0}] conforms to constraint [{1}]", vector.Node.Name, constraint.Name);
                     else
-                        report.Add("Constraint", Kind.Failed, vector, "Node [{0}] does not conform to constraint [{1}]: \"{2}\" ", vector.Node.Name, constraint.Name, constraint.HumanReadable);
+                        reporter.Add(Group.Constraint, Status.Failed, vector, "Node [{0}] does not conform to constraint [{1}]: \"{2}\" ", vector.Node.Name, constraint.Name, constraint.HumanReadable);
                 }
                 catch (XPathException e)
                 {
-                    report.Add("Constraint", Kind.Failed, vector, "Evaluation of constraint [{0}] evaluation failed: {1}", constraint.Name, e.Message);
+                    reporter.Add(Group.Constraint, Status.Failed, vector, "Evaluation of constraint [{0}] evaluation failed: {1}", constraint.Name, e.Message);
                 }
             }
         }
@@ -114,7 +105,7 @@ namespace Fhir.Profiling
             IEnumerable<string> missing = vector.Element.TypeRefs.Where(t => t.Structure == null).Select(t => t.Code);
             foreach (string s in missing)
             {
-                report.Add("Structure", Kind.Skipped, vector, "Profile misses structure [{0}]. Evaluation is skipped.", s);
+                reporter.Add(Group.Structure, Status.Skipped, vector, "Profile misses structure [{0}]. Evaluation is skipped.", s);
             }
         }
         
@@ -142,16 +133,16 @@ namespace Fhir.Profiling
                 string pattern = vector.Element.PrimitivePattern;
                 if (Regex.IsMatch(value, pattern))
                 {   
-                    report.Add("Primitive", Kind.Valid, vector, "The value format ({0}) of primitive [{1}] is valid. ", vector.Element.Name, vector.Node.Name);
+                    reporter.Add(Group.Primitive, Status.Valid, vector, "The value format ({0}) of primitive [{1}] is valid. ", vector.Element.Name, vector.Node.Name);
                 }
                 else
                 {
-                    report.Add("Primitive", Kind.Failed, vector, "The value format ({0}) of primitive [{1}] not valid: '{2}'", vector.Element.Name, vector.Node.Name, value);
+                    reporter.Add(Group.Primitive, Status.Failed, vector, "The value format ({0}) of primitive [{1}] not valid: '{2}'", vector.Element.Name, vector.Node.Name, value);
                 }
             }
             catch
             {
-                report.Add("Primitive", Kind.Failed, vector, "The value of primitive [{0}] was not present.", vector.Node.Name);
+                reporter.Add(Group.Primitive, Status.Failed, vector, "The value of primitive [{0}] was not present.", vector.Node.Name);
             }
         }
 
@@ -166,11 +157,11 @@ namespace Fhir.Profiling
                 bool equal = fixvalue.Equals(value);
                 if (equal)
                 {
-                    report.Add("Value", Kind.Valid, vector, "Fixed value validated correctly");
+                    reporter.Add(Group.Value, Status.Valid, vector, "Fixed value validated correctly");
                 }
                 else
                 {
-                    report.Add("Value", Kind.Failed, vector, "Value [{0}] doesn't match fixed value [{1}] of element [{2}]", value, fixvalue, vector.Element.Name);
+                    reporter.Add(Group.Value, Status.Failed, vector, "Value [{0}] doesn't match fixed value [{1}] of element [{2}]", value, fixvalue, vector.Element.Name);
                 }
             }
         }
@@ -202,7 +193,7 @@ namespace Fhir.Profiling
         {
             string name = vector.Node.Name;
             if (!vector.Element.HasChild(name))
-                report.Add("Element", Kind.Unknown, vector, "Element [{0}] contains undefined element [{1}]", vector.Element.Name, name);
+                reporter.Add(Group.Element, Status.Unknown, vector, "Element [{0}] contains undefined element [{1}]", vector.Element.Name, name);
         }
 
         public void ValidateNodeChildren(Vector vector)
@@ -212,7 +203,7 @@ namespace Fhir.Profiling
 
             if (vector.Element.NameSpacePrefix != FhirNamespaceManager.Fhir)
             {
-                report.Add("Element", Kind.Info, "Element [{0}] was skipped because it was not in the FHIR namespace.", vector.Element.Name);
+                reporter.Add(Group.Element, Status.Info, "Element [{0}] was skipped because it was not in the FHIR namespace.", vector.Element.Name);
                 return;
             }
 
@@ -229,7 +220,7 @@ namespace Fhir.Profiling
 
         public void ValidateElement(Vector vector)
         {
-            report.Start("element", vector);
+            reporter.Start(Group.Element, vector);
             ValidateCode(vector);
             ValidateConstraints(vector);
             ValidateStructures(vector);
@@ -240,20 +231,20 @@ namespace Fhir.Profiling
             ValidateElementChildren(vector);
             ValidateElementRef(vector);
             ValidateSlices(vector);
-            report.End();
+            reporter.End();
         }
         
         public void ValidateStructure(Vector vector)
         {
             if (vector.Structure == null)
             {
-                report.Add("Structure", Kind.Unknown, vector, "Node [{0}] does not match a known structure. Further evaluation is impossible.", vector.Node.Name);
+                reporter.Add(Group.Structure, Status.Unknown, vector, "Node [{0}] does not match a known structure. Further evaluation is impossible.", vector.Node.Name);
             }
             else
             {
-                report.Start("structure", vector);
+                reporter.Start(Group.Structure, vector);
                 ValidateElement(vector);
-                report.End();
+                reporter.End();
             }
         }
 
@@ -267,13 +258,13 @@ namespace Fhir.Profiling
 
         public Report Validate(XPathNavigator navigator)
         {
-            report.Clear();
+            reporter.Clear();
             XPathNavigator root = navigator.CreateNavigator();
             Vector vector = GetVector(root);
             
             ValidateStructure(vector);
 
-            return this.report;
+            return this.reporter.Report;
         }
 
     }

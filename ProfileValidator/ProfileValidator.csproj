@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ProfileValidation</RootNamespace>
-    <AssemblyName>test1</AssemblyName>
+    <AssemblyName>proval</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -41,15 +41,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LipidProfileTester.cs" />
-    <Compile Include="LipidTester.cs" />
-    <Compile Include="PatientTester.cs" />
-    <Compile Include="ProfileTester.cs" />
     <Compile Include="ReportPrinter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tester.cs" />
-    <Compile Include="ValueSetsTester.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

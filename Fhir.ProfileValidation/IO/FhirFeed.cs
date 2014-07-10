@@ -15,11 +15,8 @@ using System.Xml.XPath;
 namespace Fhir
 {
 
-    public class ResourceNavigator
-    {
-        public XPathNavigator navigator { get; private set; }
-    }
-
+    
+    
     
 
     public class Feed

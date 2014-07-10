@@ -17,21 +17,21 @@ namespace Fhir.Profiling
 
     public class ProfileValidator
     {
-        private Report report = new Report();
+        private ReportBuilder reporter = new ReportBuilder();
         private Profile profile;
         private List<string> missingStructureNames = new List<string>();
         
 
         public ProfileValidator(Profile profile)
         {
-            report.Clear();
+            reporter.Clear();
             this.profile = profile;
         }
 
         public void ValidateCardinality(Element element)
         {
             if (element.Cardinality.Min == null || element.Cardinality.Max == null)
-            report.Add("Element", Kind.Incomplete,
+            reporter.Add(Group.Element, Status.Incomplete,
                 "Element [{0}] does not define it's cardinality", element.Path);
 
         }
@@ -40,11 +40,12 @@ namespace Fhir.Profiling
         {
             if (constraint.IsValid)
             {
-                report.Add("Constraint", Kind.Valid, "Constraint is valid");
+                
+                reporter.Add(Group.Constraint, Status.Valid, "Constraint is valid");
             }
             else 
             {
-                 report.Add("Constraint", Kind.Failed, 
+                 reporter.Add(Group.Constraint, Status.Failed, 
                      "Constraint [{0}] ({1}) has an invalid XPath: {2}", 
                      constraint.Name, constraint.HumanReadable, constraint.CompilerError.Message);
             }
@@ -64,7 +65,7 @@ namespace Fhir.Profiling
             // Test if the Surrect was able to link to the target structure.
             if (typeref.Structure != null)
             {
-                report.Add("Reference", Kind.Valid, "Type reference to structure [{0}] is valid", typeref.Code);
+                reporter.Add(Group.Reference, Status.Valid, "Type reference to structure [{0}] is valid", typeref.Code);
                 
                 // Genest structuren valideren hoeft niet. Want alle structures worden al op hoofdniveau gevalideerd
                 //ValidateStructure(typeref.Structure);
@@ -74,7 +75,7 @@ namespace Fhir.Profiling
             // Test if there is a reference at all
             else if (typeref.Code == null)
             {
-                report.Add("Reference", Kind.Failed, "Missing a reference to a structure in element [{0}]", element.Name);
+                reporter.Add(Group.Reference, Status.Failed, "Missing a reference to a structure in element [{0}]", element.Name);
             }
 
             // Test if code is itself valid? If so, the reference valid but the target is missing.
@@ -87,7 +88,7 @@ namespace Fhir.Profiling
             // The code contains invalid characters
             else
             {
-                report.Add("Reference", Kind.Failed, "Invalid structure reference '{0}' in {1}", typeref.Code, element.Path);
+                reporter.Add(Group.Reference, Status.Failed, "Invalid structure reference '{0}' in {1}", typeref.Code, element.Path);
             }
         }
 
@@ -104,7 +105,7 @@ namespace Fhir.Profiling
             if (element.IsAttribute)
             {
                 if (element.Children != null)
-                    report.Add("Attribute", Kind.Failed, "Element [{0}] is has an attribute representation and can not have children", element);
+                    reporter.Add(Group.Attribute, Status.Failed, "Element [{0}] is has an attribute representation and can not have children", element);
             }
         }
 
@@ -122,7 +123,7 @@ namespace Fhir.Profiling
             {
                 if (element.ElementRefPath != null && element.ElementRef == null)
                 {
-                    report.Add("Reference", Kind.Failed, 
+                    reporter.Add(Group.Reference, Status.Failed, 
                         "Element [{0}] Name reference to different element [{1}] is unresolved", 
                         element.Path, element.ElementRefPath);
                 }
@@ -153,18 +154,18 @@ namespace Fhir.Profiling
         private void AddStructureNamesToReport()
         {
             foreach (string s in missingStructureNames.Distinct())
-                report.Add("Profile", Kind.Incomplete, "Missing structure definition [{0}]", s);
+                reporter.Add(Group.Profile, Status.Incomplete, "Missing structure definition [{0}]", s);
             
         }
 
         public Report Validate()
         {
-            report.Clear();
+            reporter.Clear();
             ValidateStructures();
             
             AddStructureNamesToReport();
 
-            return report;
+            return reporter.Report;
         }
     }
 }
