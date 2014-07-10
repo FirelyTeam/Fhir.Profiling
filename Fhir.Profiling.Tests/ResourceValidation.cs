@@ -1,4 +1,9 @@
-﻿using System;
+﻿/*
+* Copyright (c) 2014, Furore (info@furore.com) and contributors
+* See the file CONTRIBUTORS for details.
+*
+* This file is licensed under the BSD 3-Clause license
+*/using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Fhir.Profiling;
 using Fhir.IO;
