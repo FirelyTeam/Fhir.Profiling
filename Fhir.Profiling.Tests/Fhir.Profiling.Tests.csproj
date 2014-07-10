@@ -65,16 +65,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Fhir.ProfileValidation\Fhir.Profiling.csproj">
-      <Project>{34A3B072-5ABC-4F7C-B7E8-0AB67C58CC61}</Project>
-      <Name>Fhir.Profiling</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ProfileValidator\ProfileValidator.csproj">
-      <Project>{6f919a61-f277-4fd8-ae99-3559bbaa8407}</Project>
-      <Name>ProfileValidator</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="packages.config" />
     <EmbeddedResource Include="TestPatient.json" />
   </ItemGroup>
@@ -145,6 +135,12 @@
     <EmbeddedResource Include="TestData\valuesets.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Fhir.Profiling\Fhir.Profiling.csproj">
+      <Project>{34a3b072-5abc-4f7c-b7e8-0ab67c58cc61}</Project>
+      <Name>Fhir.Profiling</Name>
+    </ProjectReference>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
