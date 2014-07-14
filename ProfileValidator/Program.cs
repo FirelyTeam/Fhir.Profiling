@@ -113,6 +113,7 @@ namespace ProfileValidation
                 Console.WriteLine();
                 Console.WriteLine("Use: approve <profile>.xml <resource>.xml <options>");
                 Console.WriteLine("Options: ");
+                Console.WriteLine("  -base  = Validate primitives and non-FHIR namespaces)");
                 Console.WriteLine("  -r     = Raw output (default)");
                 Console.WriteLine("  -f     = Output in html with full details");
                 Console.WriteLine("  -e     = Output in html with errors only");
@@ -159,6 +160,13 @@ namespace ProfileValidation
 
             ProfileBuilder builder = new ProfileBuilder();
             builder.LoadXmlFile(file_profile);
+
+            if (parameters.Exists("base"))
+            {
+                builder.Add(StructureFactory.PrimitiveTypes());
+                builder.Add(StructureFactory.NonFhirNamespaces());
+            }
+
             Profile profile = builder.ToProfile();
 
             XPathNavigator resource = FhirFile.LoadResource(file_resource);
@@ -213,9 +221,7 @@ namespace ProfileValidation
                 Console.WriteLine("Error: {0}", e.Message);
             }
             
-            
             if (parameters.Exists("wait")) Console.ReadKey();
-
 
         }
     }

@@ -12,7 +12,7 @@ namespace Fhir.Profiling.Tests
         public void FollowPath()
         {
             /* 
-             * Profile profile = Profiles.ValueSet;
+            Profile profile = Profiles.ValueSet;
 
             Structure valueset = t.profile.GetStructureByName("ValueSet");
             
@@ -21,7 +21,7 @@ namespace Fhir.Profiling.Tests
 
             target = t.profile.FollowPath(valueset.Root, new Path("define.concept.extension"));
             Assert.AreEqual("extension", target.Name);
-             */
+            */
         }
     }
 }
