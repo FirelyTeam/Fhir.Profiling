@@ -12,64 +12,65 @@ using System.Threading.Tasks;
 
 namespace Fhir.Profiling
 {
+    
+    public delegate void OutcomeLogger(Outcome outcome);
+
+    public class ValidationException : Exception
+    {
+        public Outcome Outcome;
+        public ValidationException(Outcome outcome) 
+        {
+            this.Outcome = outcome;
+        }
+    }
+
     public class ReportBuilder
     {
         private int nesting = 0;
-        private Report report = new Report();
-        public Report Report
-        {
-            get
-            {
-                return report;
-            }
-        }
-        public void Start(Group group, Vector vector)
-        {
-            Add(group, Status.Start, vector);
-            nesting++;
-        }
-        public void End()
-        {
-            nesting--;
-            Add(Group.Hierarchy, Status.End);
-        }
-        public void Add(Group group, Status kind, Vector vector)
-        {
-            Report.Outcome outcome = new Report.Outcome(group, kind, vector, null, this.nesting);
-
-            report.Add(outcome);
-        }
-        public void Add(Group group, Status kind)
-        {
-            Report.Outcome outcome = new Report.Outcome(group, kind, null, null, this.nesting);
-
-            report.Add(outcome);
-        }
-        public void Add(Group group, Status kind, Vector vector, string message, params object[] args)
-        {
-            Report.Outcome outcome;
-            outcome.Type = group;
-            outcome.Vector = vector;
-            outcome.Message = string.Format(message, args);
-            outcome.Kind = kind;
-            outcome.Nesting = this.nesting;
-            report.Add(outcome);
-        }
-        public void Add(Group group, Status kind, string message, params object[] args)
-        {
-            Report.Outcome outcome;
-            outcome.Type = group;
-            outcome.Vector = null;
-            outcome.Message = string.Format(message, args);
-            outcome.Kind = kind;
-            outcome.Nesting = this.nesting;
-            report.Add(outcome);
-        }
-
-
+        public Report Report = new Report();
+        
         public void Clear()
         {
-            report.Clear();
+            Report.Clear();
         }
+
+        public Outcome Start(Group group, Vector vector = null)
+        {
+            Outcome outcome = new Outcome(group, Status.Start, vector, null, this.nesting);
+            nesting++;
+            return outcome;
+        }
+
+        public Outcome End(Group group)
+        {
+            Outcome outcome = new Outcome(group, Status.End, null, null, this.nesting);
+            nesting--;
+            return outcome;
+        }
+
+        public Outcome Log(Group group, Status status, Vector vector)
+        {
+            return new Outcome(group, status, vector, null, this.nesting);
+        }
+
+        public Outcome Log(Group group, Status status)
+        {
+            return new Outcome(group, status, null, null, this.nesting);
+        }
+
+        public Outcome Log(Group group, Status status, Vector vector, string message, params object[] args)
+        {
+            Outcome outcome = new Outcome(group, status, vector, string.Format(message, args), this.nesting);
+            
+            Report.Add(outcome);
+            return outcome;
+        }
+
+        public Outcome Log(Group group, Status status, string message, params object[] args)
+        {
+            return new Outcome(group, status, null, string.Format(message, args), this.nesting);
+        }
+
     }
+
 }

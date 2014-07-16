@@ -15,9 +15,9 @@ namespace Fhir.Profiling
 {
     public static class ProfileOutput
     {
-        public static void ToConsole(this IEnumerable<Report.Outcome> outcomes)
+        public static void ToConsole(this IEnumerable<Outcome> outcomes)
         {
-            foreach(Report.Outcome outcome in outcomes)
+            foreach(Outcome outcome in outcomes)
             {
                 Console.WriteLine(outcome);
             }

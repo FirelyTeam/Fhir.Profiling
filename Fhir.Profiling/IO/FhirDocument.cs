@@ -36,17 +36,17 @@ namespace Fhir.IO
             return feed.Resources;
         }
 
-        public static List<Structure> LoadXmlFile(string filename)
+        public static List<Structure> LoadStructuresFromXmlFile(string filename)
         {
             XmlDocument document = new XmlDocument();
             document.Load(filename);
             ProfileReader reader = new ProfileReader();
-            return reader.Read(document);
+            return reader.ReadProfiles(document);
         }
 
         public static void LoadXmlFile(this ProfileBuilder builder, string filename)
         {
-            List<Structure> structures = LoadXmlFile(filename);
+            List<Structure> structures = LoadStructuresFromXmlFile(filename);
             builder.Add(structures);
         }
 

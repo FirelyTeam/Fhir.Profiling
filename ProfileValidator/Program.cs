@@ -98,8 +98,6 @@ namespace ProfileValidation
 
     }
 
-    
-
     class Program
     {
         public static void Execute(Params parameters)
@@ -108,23 +106,26 @@ namespace ProfileValidation
 
             if (parameters.Count == 0)
             {
-                Console.WriteLine("FHIR Profile based resource validation version 0.5 -- DSTU-1");
+                Console.WriteLine("FHIR Profile based resource validation version 0.6 -- DSTU-1");
                 Console.WriteLine("(c) Copyright 2014 Furore - http://www.furore.com");
                 Console.WriteLine();
-                Console.WriteLine("Use: approve <profile>.xml <resource>.xml <options>");
+                Console.WriteLine("Use: proval <profile file> <resource file> <options>");
                 Console.WriteLine("Options: ");
                 Console.WriteLine("  -base  = Validate primitives and non-FHIR namespaces)");
                 Console.WriteLine("  -r     = Raw output (default)");
-                Console.WriteLine("  -f     = Output in html with full details");
-                Console.WriteLine("  -e     = Output in html with errors only");
+                Console.WriteLine("  -f     = Validation report in html with full details");
+                Console.WriteLine("  -e     = Validation report in html with errors only");
+                Console.WriteLine("  -v     = Load valuesets");
+                Console.WriteLine("  -break = Stop validation on first error (does not create a report)");
+
                 Console.WriteLine("  -open  = Open report directly");
+
 
                 return;
             }
 
             if (parameters.Exists(0))
             {
-
                 file_profile = parameters[0];
                 if (!File.Exists(file_profile))
                 {
@@ -134,7 +135,7 @@ namespace ProfileValidation
             }
             else
             {
-                Console.WriteLine("You have to provide a Profile file");
+                Console.WriteLine("You have to provide a profile file");
                 return;
             }
 
@@ -159,7 +160,8 @@ namespace ProfileValidation
             if (parameters.Exists("e")) mode = ReportMode.Errors;
 
             ProfileBuilder builder = new ProfileBuilder();
-            builder.LoadXmlFile(file_profile);
+            
+            
 
             if (parameters.Exists("base"))
             {
@@ -167,24 +169,58 @@ namespace ProfileValidation
                 builder.Add(StructureFactory.NonFhirNamespaces());
             }
 
+            if (parameters.Exists("v"))
+            {
+                builder.LoadXMLValueSets("valuesets.xml");
+            }
+
+            XmlDocument document = new XmlDocument();
+            document.Load(file_profile);
+            ProfileReader reader = new ProfileReader();
+            builder.Add(reader.ReadProfiles(document));
+
+            
             Profile profile = builder.ToProfile();
 
             XPathNavigator resource = FhirFile.LoadResource(file_resource);
-            Report report = profile.Validate(resource);
             
-            if (report.IsValid)
+            Report report = null;
+            bool valid;
+            Outcome outcome;
+
+            if (parameters.Exists("break"))
+            {
+                valid = profile.Assert(resource, out outcome);
+                if (!valid)
+                {
+                    Console.WriteLine("Error: {0} ", outcome.Message);
+                }
+            }
+            else 
+            {
+                report = profile.Validate(resource);
+                valid = report.IsValid;
+            }
+
+
+            
+            if (valid)
             {
                 Console.WriteLine("Your resource is valid");
             }
             else
             {
-                Console.WriteLine("Your resource was not valid.");
+                Console.WriteLine("Your resource is not valid.");
+            }
+
+            if (report != null)
+            {
 
                 if (mode == ReportMode.Raw)
                 {
                     report.Errors.ToConsole();
                 }
-                else 
+                else
                 {
                     ReportPrinter printer = new ReportPrinter("report");
                     if (mode == ReportMode.Errors)
@@ -197,15 +233,13 @@ namespace ProfileValidation
                         printer.PrintFull(report);
                         Console.WriteLine("Validation analysis was saved to 'report.html'");
                     }
-  
-                    if (parameters.Exists("open"))
-                    {
-                        Console.WriteLine("Opening report.html");
-                        Process.Start("report.html");
-                    }
-  
                 }
 
+                if (mode != ReportMode.Raw && parameters.Exists("open"))
+                {
+                    Console.WriteLine("Opening report.html");
+                    Process.Start("report.html");
+                }
             }
         }
 
@@ -214,7 +248,7 @@ namespace ProfileValidation
             Params parameters = new Params(args);
             try
             {
-                Execute(parameters);
+                 Execute(parameters);
             }
             catch (Exception e)
             {

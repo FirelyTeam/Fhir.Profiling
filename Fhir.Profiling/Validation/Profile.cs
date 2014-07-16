@@ -15,6 +15,7 @@ using System.Xml.XPath;
 namespace Fhir.Profiling
 {
 
+   
     public enum SlicingRules { OpenAtEnd };
     
     /// <summary>
@@ -25,12 +26,18 @@ namespace Fhir.Profiling
     {
         private List<Structure> _structures = new List<Structure>();
         private List<ValueSet> _valueSets = new List<ValueSet>();
-        
+        public bool Sealed { get; private set; }
+
         internal Profile()
         {
-            
+            Sealed = false;
         }
         
+        public void Seal()
+        {
+            Sealed = true;
+        }
+    
         public IEnumerable<Structure> Structures
         {
             get
@@ -65,12 +72,18 @@ namespace Fhir.Profiling
 
         internal void Add(IEnumerable<ValueSet> valuesets)
         {
-            _valueSets.AddRange(valuesets);
+            if (!Sealed)
+                _valueSets.AddRange(valuesets);
+            else
+                throw new InvalidOperationException("Profile is sealed");
         }
         
         internal void Add(IEnumerable<Structure> structures)
         {
-            _structures.AddRange(structures);
+            if (!Sealed)
+                _structures.AddRange(structures);
+            else
+                throw new InvalidOperationException("Profile is sealed");
         }
 
         public Structure GetStructureByName(string name)

@@ -49,7 +49,7 @@ namespace Fhir.Profiling
             Write("<h1>{0}</h1>", s);
         }
 
-        public void WriteOutcome(Report.Outcome outcome)
+        public void WriteOutcome(Outcome outcome)
         {
             WriteLine(OutcomeToString(outcome));
 
@@ -67,7 +67,7 @@ namespace Fhir.Profiling
                 }
         }
 
-        public string OutcomeToString(Report.Outcome outcome)
+        public string OutcomeToString(Outcome outcome)
         {
             string tag = "u";
 
@@ -96,7 +96,7 @@ namespace Fhir.Profiling
 
         public void PrintAllOutcomes(Report report)
         {
-            foreach (Report.Outcome outcome in report)
+            foreach (Outcome outcome in report)
             {
                 string i = indent(outcome.Nesting);
 
@@ -118,7 +118,7 @@ namespace Fhir.Profiling
 
         public void PrintFailedOutcomes(Report report)
         {
-            foreach (Report.Outcome outcome in report)
+            foreach (Outcome outcome in report)
             {
                 if (outcome.Kind.Failed())
                 {

@@ -14,36 +14,18 @@ using System.Threading.Tasks;
 namespace Fhir.Profiling
 {
 
-    public class Report : List<Report.Outcome>
+    public class Report : List<Outcome>
     {
-        public struct Outcome
-        {
-            public Group Type;
-            public Vector Vector;
-            public string Message;
-            public int Nesting;
-            public Status Kind;
-            public Outcome(Group group, Status kind, Vector vector, string message, int nesting = 0)
-            {
-                this.Type = group;
-                this.Kind = kind;
-                this.Vector = vector;
-                this.Message = message;
-                this.Nesting = nesting;
-            }
-            public override string ToString()
-            {
-                return string.Format("{0} {1}: {2}", this.Type, Kind.ToString().ToLower(), this.Message);
-            }
-        }
+        
 
-        public IEnumerable<Report.Outcome> Errors
+        public IEnumerable<Outcome> Errors
         {
             get
             {
                 return this.Where(outcome => outcome.Kind.Failed());
             }
         }
+
         public int ErrorCount
         {
             get 
@@ -52,7 +34,7 @@ namespace Fhir.Profiling
             }
         }
 
-        public IEnumerable<Report.Outcome> Where(Group group, Status kind)
+        public IEnumerable<Outcome> Where(Group group, Status kind)
         {
             return this.Where(outcome => outcome.Type == group && outcome.Kind == kind);
         }
@@ -69,6 +51,7 @@ namespace Fhir.Profiling
                 return this.Count(o => o.Kind.Failed()) == 0;
             }
         }
+
     }
 
 

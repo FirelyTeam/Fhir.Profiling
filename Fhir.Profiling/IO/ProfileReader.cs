@@ -197,11 +197,10 @@ namespace Fhir.Profiling
             return structure;
         }
 
-        public List<Structure> ReadProfile(XPathNavigator node)
+        public List<Structure> ReadStructures(XPathNavigator node)
         {
             List<Structure> structures = new List<Structure>();
-            XPathNodeIterator xStructures = node.Select("f:Profile/f:structure", ns);
-            foreach (XPathNavigator xStructure in xStructures)
+            foreach (XPathNavigator xStructure in node.Select("f:structure", ns))
             {
                 Structure s = ReadStructure(xStructure);
                 structures.Add(s);
@@ -209,13 +208,20 @@ namespace Fhir.Profiling
             return structures;
         }
 
-        public List<Structure> Read(IXPathNavigable navigable)
+        public List<Structure> ReadProfiles(IXPathNavigable root)
         {
-            XPathNavigator navigator = navigable.CreateNavigator();
+            XPathNavigator navigator = root.CreateNavigator();
             ns = FhirNamespaceManager.CreateManager(navigator);
-            return ReadProfile(navigator);
+            List<Structure> structures = new List<Structure>();
+
+            foreach (XPathNavigator node in navigator.Select("//f:Profile", ns))
+            {
+                structures.AddRange(ReadStructures(node));
+            }
+            return structures;
         }
 
+        
         public ValueSet ReadValueSet(XPathNavigator node)
         {
             ValueSet valueset = new ValueSet();

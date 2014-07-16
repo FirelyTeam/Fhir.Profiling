@@ -29,6 +29,24 @@ namespace Fhir.Profiling
             return report; 
         }
 
+        public static bool Assert(this Profile profile, XPathNavigator resource, out Outcome outcome)
+        {
+            ResourceValidator validator = new ResourceValidator(profile);
+            validator.LogOutcome += (o) => { if (o.Kind.Failed()) throw new ValidationException(o); };
+            try
+            {
+                Report report = validator.Validate(resource);
+                outcome = null;
+                return true; 
+            }
+            catch (ValidationException e)
+            {
+                outcome = e.Outcome;
+                return false;
+            }
+            
+        }
+
         
 
     }

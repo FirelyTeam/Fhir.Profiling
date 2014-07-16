@@ -135,11 +135,15 @@ namespace Fhir.Profiling
             _linkElementRefs();
             _compileConstraints();
             _addNameSpaces();
+            profile.Seal();
         }
 
         public Profile ToProfile()
         {
-            _surrect();
+            if (!profile.Sealed)
+            {
+                _surrect();
+            }
             return profile;
 
         }
